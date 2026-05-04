@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7fbf2">
+  <title>PokeG - Route & Battle</title>
+  <link rel="preconnect" href="https://raw.githubusercontent.com">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">PG</div>
+        <div>
+          <h1>PokeG</h1>
+          <p id="routeName">Sproutline Meadow</p>
+        </div>
+      </div>
+      <div class="top-stats" aria-label="Trainer status">
+        <div><span>Badges</span><strong id="badgeCount">0</strong></div>
+        <div><span>Money</span><strong id="moneyCount">$300</strong></div>
+        <div><span>Seen</span><strong id="seenCount">0</strong></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-button" id="healButton" type="button" title="Heal party" aria-label="Heal party">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+        </button>
+        <button class="icon-button" id="saveButton" type="button" title="Save" aria-label="Save game">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l2 2v16H5zM7 5v5h9V5zm1 10v4h8v-4z"/></svg>
+        </button>
+        <button class="icon-button" id="audioButton" type="button" title="Sound" aria-label="Toggle sound">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zm12.5-.5 1.4-1.4a7 7 0 0 1 0 9.8l-1.4-1.4a5 5 0 0 0 0-7z"/></svg>
+        </button>
+        <button class="icon-button danger" id="resetButton" type="button" title="Reset" aria-label="Reset game">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h10l-1 16H8zm3-3h4l1 2H9zM5 4h14v2H5z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="game-layout">
+      <section class="world-section" aria-label="Overworld">
+        <div class="world-status">
+          <div class="player-chip">
+            <span class="trainer-dot" aria-hidden="true"></span>
+            <strong id="trainerName">Rookie</strong>
+          </div>
+          <div class="quest-chip" id="questText">Choose a starter</div>
+        </div>
+        <div class="world-frame">
+          <canvas id="worldCanvas" width="1088" height="704" aria-label="Map"></canvas>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </div>
+        <div class="mobile-controls" aria-label="Movement controls">
+          <button type="button" class="dpad up" data-move="up" aria-label="Move up">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 6 7 8H5z"/></svg>
+          </button>
+          <button type="button" class="dpad left" data-move="left" aria-label="Move left">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 8-7v14z"/></svg>
+          </button>
+          <button type="button" class="dpad action" id="mobileAction" aria-label="Action">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 .1 0zm0 5a3 3 0 1 1-.1 0z"/></svg>
+          </button>
+          <button type="button" class="dpad right" data-move="right" aria-label="Move right">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 12-8 7V5z"/></svg>
+          </button>
+          <button type="button" class="dpad down" data-move="down" aria-label="Move down">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 18-7-8h14z"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <aside class="side-panel" aria-label="Trainer panels">
+        <div class="tabs" role="tablist" aria-label="Trainer views">
+          <button class="tab is-active" type="button" data-tab="party" role="tab" aria-selected="true">Party</button>
+          <button class="tab" type="button" data-tab="bag" role="tab" aria-selected="false">Bag</button>
+          <button class="tab" type="button" data-tab="dex" role="tab" aria-selected="false">Dex</button>
+          <button class="tab" type="button" data-tab="log" role="tab" aria-selected="false">Log</button>
+        </div>
+        <div class="panel-view is-active" id="partyPanel" role="tabpanel"></div>
+        <div class="panel-view" id="bagPanel" role="tabpanel"></div>
+        <div class="panel-view" id="dexPanel" role="tabpanel"></div>
+        <div class="panel-view" id="logPanel" role="tabpanel"></div>
+      </aside>
+    </main>
+
+    <section class="battle-overlay" id="battleOverlay" aria-label="Battle" hidden>
+      <div class="battle-stage">
+        <div class="battle-topline">
+          <div id="battleTitle">Wild encounter</div>
+          <button class="icon-button" id="battleCloseButton" type="button" title="Close" aria-label="Close battle">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 7.4 1.4-1.4 4.6 4.6L16.6 6 18 7.4 13.4 12l4.6 4.6-1.4 1.4-4.6-4.6L7.4 18 6 16.6l4.6-4.6z"/></svg>
+          </button>
+        </div>
+        <div class="battle-field">
+          <div class="combatant player-side" id="playerCombatant"></div>
+          <div class="versus-line" aria-hidden="true"></div>
+          <div class="combatant enemy-side" id="enemyCombatant"></div>
+        </div>
+        <div class="battle-console">
+          <div class="battle-log" id="battleLog" role="status" aria-live="polite"></div>
+          <div class="battle-actions">
+            <div class="move-grid" id="moveGrid"></div>
+            <div class="battle-tools">
+              <button type="button" id="catchButton">Poke Ball</button>
+              <button type="button" id="potionButton">Potion</button>
+              <button type="button" id="switchButton">Switch</button>
+              <button type="button" id="fleeButton">Flee</button>
+            </div>
+          </div>
+          <div class="switch-panel" id="switchPanel" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="starterModal">
+      <div class="modal">
+        <div class="modal-header">
+          <p>Professor Maple</p>
+          <h2>Choose your first partner</h2>
+        </div>
+        <div class="starter-grid" id="starterGrid"></div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="finishModal" hidden>
+      <div class="modal finish-modal">
+        <div class="modal-header">
+          <p>League Signal</p>
+          <h2 id="finishTitle">Badge earned</h2>
+        </div>
+        <p id="finishText"></p>
+        <div class="modal-actions">
+          <button type="button" id="continueButton">Continue</button>
+          <button type="button" id="newRunButton">New run</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
