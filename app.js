@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SAVE_KEY = "pokeg-route-battle-v1";
+  const SAVE_KEY = "pokeg-route-battle-v2";
   const SPRITE_BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
   const ANIMATED_BASE = `${SPRITE_BASE}/versions/generation-v/black-white/animated`;
   const WORLD = { width: 34, height: 22, tile: 32 };
@@ -15,9 +15,11 @@
   const els = {
     canvas: document.getElementById("worldCanvas"),
     routeName: document.getElementById("routeName"),
+    gameTitle: document.getElementById("gameTitle"),
     badgeCount: document.getElementById("badgeCount"),
     moneyCount: document.getElementById("moneyCount"),
     seenCount: document.getElementById("seenCount"),
+    editionName: document.getElementById("editionName"),
     trainerName: document.getElementById("trainerName"),
     questText: document.getElementById("questText"),
     toast: document.getElementById("toast"),
@@ -25,7 +27,11 @@
     bagPanel: document.getElementById("bagPanel"),
     dexPanel: document.getElementById("dexPanel"),
     logPanel: document.getElementById("logPanel"),
+    editionModal: document.getElementById("editionModal"),
+    editionGrid: document.getElementById("editionGrid"),
     starterModal: document.getElementById("starterModal"),
+    starterProfessor: document.getElementById("starterProfessor"),
+    starterHeadline: document.getElementById("starterHeadline"),
     starterGrid: document.getElementById("starterGrid"),
     finishModal: document.getElementById("finishModal"),
     finishTitle: document.getElementById("finishTitle"),
@@ -175,7 +181,34 @@
     { id: 129, name: "Magikarp", types: ["water"], base: { hp: 20, attack: 10, defense: 55, speed: 80 }, catchRate: 255, moves: ["splash", "tackle"] },
     { id: 133, name: "Eevee", types: ["normal"], base: { hp: 55, attack: 55, defense: 50, speed: 55 }, catchRate: 45, moves: ["tackle", "tail-whip", "quick-attack", "bite", "body-slam"] },
     { id: 143, name: "Snorlax", types: ["normal"], base: { hp: 160, attack: 110, defense: 65, speed: 30 }, catchRate: 25, moves: ["tackle", "body-slam", "bite", "slam"] },
-    { id: 147, name: "Dratini", types: ["dragon"], base: { hp: 41, attack: 64, defense: 45, speed: 50 }, catchRate: 45, moves: ["tackle", "thunder-shock", "dragon-breath", "aqua-tail"] }
+    { id: 147, name: "Dratini", types: ["dragon"], base: { hp: 41, attack: 64, defense: 45, speed: 50 }, catchRate: 45, moves: ["tackle", "thunder-shock", "dragon-breath", "aqua-tail"] },
+    { id: 252, name: "Treecko", types: ["grass"], base: { hp: 40, attack: 45, defense: 35, speed: 70 }, catchRate: 45, moves: ["pound", "quick-attack", "absorb", "leaf-blade"], evolve: { level: 16, to: 253 } },
+    { id: 253, name: "Grovyle", types: ["grass"], base: { hp: 50, attack: 65, defense: 45, speed: 95 }, catchRate: 45, moves: ["quick-attack", "absorb", "leaf-blade", "slam"], evolve: { level: 36, to: 254 } },
+    { id: 254, name: "Sceptile", types: ["grass"], base: { hp: 70, attack: 85, defense: 65, speed: 120 }, catchRate: 45, moves: ["quick-attack", "mega-drain", "leaf-blade", "slam"] },
+    { id: 255, name: "Torchic", types: ["fire"], base: { hp: 45, attack: 60, defense: 40, speed: 45 }, catchRate: 45, moves: ["scratch", "growl", "ember", "blaze-kick"], evolve: { level: 16, to: 256 } },
+    { id: 256, name: "Combusken", types: ["fire", "fighting"], base: { hp: 60, attack: 85, defense: 60, speed: 55 }, catchRate: 45, moves: ["scratch", "ember", "double-kick", "blaze-kick"], evolve: { level: 36, to: 257 } },
+    { id: 257, name: "Blaziken", types: ["fire", "fighting"], base: { hp: 80, attack: 120, defense: 70, speed: 80 }, catchRate: 45, moves: ["ember", "double-kick", "blaze-kick", "slash"] },
+    { id: 258, name: "Mudkip", types: ["water"], base: { hp: 50, attack: 70, defense: 50, speed: 40 }, catchRate: 45, moves: ["tackle", "growl", "water-gun", "mud-shot"], evolve: { level: 16, to: 259 } },
+    { id: 259, name: "Marshtomp", types: ["water", "ground"], base: { hp: 70, attack: 85, defense: 70, speed: 50 }, catchRate: 45, moves: ["tackle", "water-gun", "mud-shot", "aqua-tail"], evolve: { level: 36, to: 260 } },
+    { id: 260, name: "Swampert", types: ["water", "ground"], base: { hp: 100, attack: 110, defense: 90, speed: 60 }, catchRate: 45, moves: ["water-gun", "mud-shot", "aqua-tail", "body-slam"] },
+    { id: 261, name: "Poochyena", types: ["dark"], base: { hp: 35, attack: 55, defense: 35, speed: 35 }, catchRate: 255, moves: ["tackle", "sand-attack", "bite", "feint-attack"], evolve: { level: 18, to: 262 } },
+    { id: 262, name: "Mightyena", types: ["dark"], base: { hp: 70, attack: 90, defense: 70, speed: 70 }, catchRate: 127, moves: ["tackle", "bite", "feint-attack", "crunch"] },
+    { id: 263, name: "Zigzagoon", types: ["normal"], base: { hp: 38, attack: 30, defense: 41, speed: 60 }, catchRate: 255, moves: ["tackle", "tail-whip", "headbutt", "swift"] },
+    { id: 265, name: "Wurmple", types: ["bug"], base: { hp: 45, attack: 45, defense: 35, speed: 20 }, catchRate: 255, moves: ["tackle", "poison-sting", "bug-bite"] },
+    { id: 270, name: "Lotad", types: ["water", "grass"], base: { hp: 40, attack: 30, defense: 30, speed: 30 }, catchRate: 255, moves: ["absorb", "bubble", "mega-drain", "water-gun"] },
+    { id: 278, name: "Wingull", types: ["water", "flying"], base: { hp: 40, attack: 30, defense: 30, speed: 85 }, catchRate: 190, moves: ["water-gun", "gust", "wing-attack", "quick-attack"] },
+    { id: 280, name: "Ralts", types: ["psychic", "fairy"], base: { hp: 28, attack: 25, defense: 25, speed: 40 }, catchRate: 235, moves: ["confusion", "fairy-wind", "psybeam", "shadow-sneak"], evolve: { level: 20, to: 281 } },
+    { id: 281, name: "Kirlia", types: ["psychic", "fairy"], base: { hp: 38, attack: 35, defense: 35, speed: 50 }, catchRate: 120, moves: ["confusion", "fairy-wind", "psybeam", "shadow-sneak"], evolve: { level: 30, to: 282 } },
+    { id: 282, name: "Gardevoir", types: ["psychic", "fairy"], base: { hp: 68, attack: 65, defense: 65, speed: 80 }, catchRate: 45, moves: ["confusion", "fairy-wind", "psybeam", "thunderbolt"] },
+    { id: 283, name: "Surskit", types: ["bug", "water"], base: { hp: 40, attack: 30, defense: 32, speed: 65 }, catchRate: 200, moves: ["bubble", "quick-attack", "bug-bite", "water-gun"] },
+    { id: 285, name: "Shroomish", types: ["grass"], base: { hp: 60, attack: 40, defense: 60, speed: 35 }, catchRate: 255, moves: ["tackle", "absorb", "mega-drain", "headbutt"] },
+    { id: 296, name: "Makuhita", types: ["fighting"], base: { hp: 72, attack: 60, defense: 30, speed: 25 }, catchRate: 180, moves: ["tackle", "sand-attack", "arm-thrust", "karate"] },
+    { id: 304, name: "Aron", types: ["steel", "rock"], base: { hp: 50, attack: 70, defense: 100, speed: 30 }, catchRate: 180, moves: ["tackle", "metal-claw", "rock-throw", "iron-head"] },
+    { id: 309, name: "Electrike", types: ["electric"], base: { hp: 40, attack: 45, defense: 40, speed: 65 }, catchRate: 120, moves: ["tackle", "quick-attack", "thunder-shock", "spark"] },
+    { id: 318, name: "Carvanha", types: ["water", "dark"], base: { hp: 45, attack: 90, defense: 20, speed: 65 }, catchRate: 225, moves: ["bite", "water-gun", "crunch", "aqua-tail"] },
+    { id: 328, name: "Trapinch", types: ["ground"], base: { hp: 45, attack: 100, defense: 45, speed: 10 }, catchRate: 255, moves: ["bite", "sand-attack", "mud-shot", "dig"] },
+    { id: 333, name: "Swablu", types: ["normal", "flying"], base: { hp: 45, attack: 40, defense: 60, speed: 50 }, catchRate: 255, moves: ["peck", "fairy-wind", "wing-attack", "dragon-breath"] },
+    { id: 363, name: "Spheal", types: ["ice", "water"], base: { hp: 70, attack: 40, defense: 50, speed: 25 }, catchRate: 255, moves: ["water-gun", "ice-shard", "aurora", "body-slam"] }
   ];
 
   Object.assign(MOVES, {
@@ -187,7 +220,16 @@
     stomp: { name: "Stomp", type: "normal", power: 65, accuracy: 100 },
     "fury-attack": { name: "Fury Attack", type: "normal", power: 45, accuracy: 95 },
     "bone-club": { name: "Bone Club", type: "ground", power: 65, accuracy: 85 },
-    swift: { name: "Swift", type: "normal", power: 60, accuracy: 100 }
+    swift: { name: "Swift", type: "normal", power: 60, accuracy: 100 },
+    absorb: { name: "Absorb", type: "grass", power: 30, accuracy: 100, drain: 0.5 },
+    "leaf-blade": { name: "Leaf Blade", type: "grass", power: 90, accuracy: 100 },
+    "blaze-kick": { name: "Blaze Kick", type: "fire", power: 85, accuracy: 90 },
+    "mud-shot": { name: "Mud Shot", type: "ground", power: 55, accuracy: 95 },
+    "feint-attack": { name: "Feint Attack", type: "dark", power: 60, accuracy: 100 },
+    headbutt: { name: "Headbutt", type: "normal", power: 70, accuracy: 100 },
+    crunch: { name: "Crunch", type: "dark", power: 80, accuracy: 100 },
+    "arm-thrust": { name: "Arm Thrust", type: "fighting", power: 55, accuracy: 95 },
+    "iron-head": { name: "Iron Head", type: "steel", power: 80, accuracy: 100 }
   });
 
   const SPECIES = new Map(POKEDEX.map((pokemon) => [pokemon.id, pokemon]));
@@ -288,6 +330,191 @@
     ]
   };
 
+  const SAPPHIRE_ENCOUNTERS = {
+    meadow: [
+      { id: 263, weight: 24, min: 2, max: 6 },
+      { id: 265, weight: 20, min: 2, max: 5 },
+      { id: 270, weight: 16, min: 3, max: 7 },
+      { id: 278, weight: 12, min: 4, max: 7 },
+      { id: 285, weight: 10, min: 4, max: 8 },
+      { id: 280, weight: 4, min: 4, max: 7 },
+      { id: 309, weight: 2, min: 5, max: 8 }
+    ],
+    granite: [
+      { id: 304, weight: 24, min: 5, max: 11 },
+      { id: 328, weight: 19, min: 6, max: 12 },
+      { id: 74, weight: 15, min: 5, max: 10 },
+      { id: 296, weight: 12, min: 6, max: 12 },
+      { id: 41, weight: 10, min: 5, max: 11 },
+      { id: 95, weight: 2, min: 8, max: 13 }
+    ],
+    coast: [
+      { id: 270, weight: 18, min: 5, max: 11 },
+      { id: 278, weight: 18, min: 5, max: 12 },
+      { id: 283, weight: 16, min: 6, max: 12 },
+      { id: 318, weight: 12, min: 7, max: 13 },
+      { id: 363, weight: 8, min: 8, max: 14 },
+      { id: 116, weight: 8, min: 7, max: 13 },
+      { id: 129, weight: 8, min: 4, max: 9 }
+    ],
+    orchard: [
+      { id: 285, weight: 18, min: 7, max: 13 },
+      { id: 333, weight: 15, min: 7, max: 13 },
+      { id: 280, weight: 12, min: 8, max: 14 },
+      { id: 309, weight: 12, min: 8, max: 14 },
+      { id: 261, weight: 12, min: 7, max: 13 },
+      { id: 252, weight: 2, min: 8, max: 12 },
+      { id: 258, weight: 2, min: 8, max: 12 },
+      { id: 147, weight: 1, min: 10, max: 14 }
+    ]
+  };
+
+  const EDITIONS = {
+    ember: {
+      id: "ember",
+      name: "PokeG Ember Red",
+      shortName: "Ember Red",
+      cardTitle: "Ember Red",
+      cardText: "A hotter, Kanto-inspired route set with rocky cuts, bold rivals, and classic partners.",
+      cardTags: ["classic", "fire", "rock"],
+      starters: STARTERS,
+      professor: "Professor Maple",
+      starterHeadline: "Choose your Ember partner",
+      leaderName: "Leader Aster",
+      leaderBadge: "Verdant Badge",
+      ballName: "Poke Balls",
+      giftRepeat: "Professor Maple is tracking rare signals near the coast.",
+      giftLog: "Professor Maple pointed toward the coast.",
+      giftReceived: "Received 6 Poke Balls, 2 Potions, and $120.",
+      routeNames: {
+        town: "Maple Town",
+        gym: "Aster Gym Gate",
+        coast: "Copperwash Coast",
+        granite: "Granite Cut",
+        orchard: "Night Orchard",
+        meadow: "Sproutline Meadow",
+        road: "Amber Road"
+      },
+      theme: {
+        paper: "#fbf7ee",
+        paperStrong: "#fffdf6",
+        ink: "#201812",
+        muted: "#715f55",
+        grass: "#7fbf5f",
+        grassDark: "#3f8d53",
+        water: "#5bb9d6",
+        fire: "#ef704b",
+        electric: "#f1c84b",
+        violet: "#7567d9",
+        danger: "#cf4d4d"
+      },
+      world: {
+        meadow: ["#84c46a", "#8fd175"],
+        tallgrass: ["#5fae57", "#68b95e"],
+        path: ["#d5ad72", "#dfc082"],
+        water: "#58b8d4",
+        treeTrunk: "#204b34",
+        tree: ["#2d7d4a", "#318c53"],
+        rock: "#716f69",
+        battleSky: "#a8df8a",
+        battleGround: "#dbbf80"
+      },
+      buildingRoofs: { clinic: "#ef704b", lab: "#5bb9d6", gym: "#7567d9" },
+      npcs: {
+        nurse: { name: "Nurse Luma", color: "#ef704b" },
+        professor: { name: "Professor Maple", color: "#5bb9d6" },
+        scout: { name: "Scout Ren", color: "#7fbf5f" },
+        rival: { name: "Rival Jules", color: "#f1c84b" },
+        leader: { name: "Leader Aster", color: "#7567d9" }
+      },
+      trainers: TRAINERS,
+      encounters: ENCOUNTERS,
+      badgeText: "Aster opens the longer routes, and your dex signal now marks rare encounters more clearly."
+    },
+    sapphire: {
+      id: "sapphire",
+      name: "PokeG Sapphire Tide",
+      shortName: "Sapphire Tide",
+      cardTitle: "Sapphire Tide",
+      cardText: "A wetter, Hoenn-inspired route set with tidal grass, cave steel, and new Gen III partners.",
+      cardTags: ["coastal", "water", "gen iii"],
+      starters: [252, 255, 258, 280],
+      professor: "Professor Coral",
+      starterHeadline: "Choose your Tide partner",
+      leaderName: "Leader Marina",
+      leaderBadge: "Tide Badge",
+      ballName: "Net Balls",
+      giftRepeat: "Professor Coral is reading strange currents along the south shoals.",
+      giftLog: "Professor Coral marked a shoal signal on your dex.",
+      giftReceived: "Received 8 Net Balls, 2 Potions, and $140.",
+      routeNames: {
+        town: "Coralroot Town",
+        gym: "Marina Gym Pier",
+        coast: "Sapphire Shoals",
+        granite: "Slatebreak Cave",
+        orchard: "Rainleaf Grove",
+        meadow: "Dewdrop Route",
+        road: "Harbor Road"
+      },
+      theme: {
+        paper: "#f2fbf8",
+        paperStrong: "#fffdf6",
+        ink: "#10242a",
+        muted: "#557075",
+        grass: "#63b985",
+        grassDark: "#2f8e71",
+        water: "#43acd5",
+        fire: "#ec7b4f",
+        electric: "#f0c94e",
+        violet: "#5d74d8",
+        danger: "#c74d5a"
+      },
+      world: {
+        meadow: ["#75c894", "#82d3a0"],
+        tallgrass: ["#3c9f80", "#4fb18d"],
+        path: ["#d8c48a", "#e4d09a"],
+        water: "#43acd5",
+        treeTrunk: "#1f584c",
+        tree: ["#248166", "#2c9677"],
+        rock: "#667783",
+        battleSky: "#91d6c7",
+        battleGround: "#d7c88e"
+      },
+      buildingRoofs: { clinic: "#43acd5", lab: "#63b985", gym: "#5d74d8" },
+      npcs: {
+        nurse: { name: "Nurse Pearl", color: "#43acd5" },
+        professor: { name: "Professor Coral", color: "#63b985" },
+        scout: { name: "Tuber Nia", color: "#4fb18d" },
+        rival: { name: "Rival Kai", color: "#f0c94e" },
+        leader: { name: "Leader Marina", color: "#5d74d8" }
+      },
+      trainers: {
+        scout: {
+          name: "Tuber Nia",
+          reward: 112,
+          intro: "Tuber Nia splashes into a quick challenge.",
+          team: [{ id: 263, level: 5 }, { id: 270, level: 5 }, { id: 278, level: 6 }]
+        },
+        rival: {
+          name: "Rival Kai",
+          reward: 210,
+          intro: "Rival Kai flips a coin and sends out a fresh partner.",
+          dynamic: "rival"
+        },
+        leader: {
+          name: "Leader Marina",
+          reward: 680,
+          intro: "Leader Marina lets the tide settle before the first throw.",
+          badge: "Tide Badge",
+          dynamic: "leader",
+          badgeText: "Marina clears the shoal gates, and rare coastal encounters begin pulsing on your dex."
+        }
+      },
+      encounters: SAPPHIRE_ENCOUNTERS,
+      badgeText: "Marina clears the shoal gates, and rare coastal encounters begin pulsing on your dex."
+    }
+  };
+
   const keysDown = new Set();
   let activeTab = "party";
   let state = freshState();
@@ -295,16 +522,18 @@
   let toastTimer = 0;
   let audioContext = null;
 
-  function freshState() {
+  function freshState(editionId = null) {
+    const selectedEdition = editionId && EDITIONS[editionId] ? editionId : null;
     return {
-      version: 1,
+      version: 2,
+      edition: selectedEdition,
       trainer: { name: "Rookie" },
       player: { x: 16, y: 12, dir: "down", steps: 0 },
       party: [],
       pc: [],
       activeIndex: 0,
-      bag: { balls: 8, potions: 4, berries: 2 },
-      money: 300,
+      bag: { balls: selectedEdition === "sapphire" ? 10 : 8, potions: 4, berries: selectedEdition === "sapphire" ? 3 : 2 },
+      money: selectedEdition === "sapphire" ? 320 : 300,
       badges: [],
       dexSeen: [],
       dexCaught: [],
@@ -316,8 +545,11 @@
   }
 
   function normalizeState(save) {
-    const base = freshState();
+    const selectedEdition = save.edition && EDITIONS[save.edition] ? save.edition : "ember";
+    const base = freshState(selectedEdition);
     const merged = { ...base, ...save };
+    merged.version = 2;
+    merged.edition = selectedEdition;
     merged.trainer = { ...base.trainer, ...(save.trainer || {}) };
     merged.player = { ...base.player, ...(save.player || {}) };
     merged.bag = { ...base.bag, ...(save.bag || {}) };
@@ -354,14 +586,19 @@
   }
 
   function boot() {
+    renderEditions();
     renderStarters();
     const saved = loadGame();
     if (saved && saved.party.length) {
       state = saved;
+      applyEditionTheme();
+      els.editionModal.hidden = true;
       els.starterModal.hidden = true;
       showToast("Save loaded.");
     } else {
-      els.starterModal.hidden = false;
+      applyEditionTheme("ember");
+      els.editionModal.hidden = false;
+      els.starterModal.hidden = true;
     }
     syncAudioButton();
     renderAll();
@@ -395,6 +632,44 @@
     }
   }
 
+  function getEdition(id = state.edition) {
+    return EDITIONS[id] || EDITIONS.ember;
+  }
+
+  function applyEditionTheme(id = state.edition) {
+    const edition = getEdition(id);
+    const root = document.documentElement;
+    const theme = edition.theme;
+    root.style.setProperty("--paper", theme.paper);
+    root.style.setProperty("--paper-strong", theme.paperStrong);
+    root.style.setProperty("--ink", theme.ink);
+    root.style.setProperty("--muted", theme.muted);
+    root.style.setProperty("--grass", theme.grass);
+    root.style.setProperty("--grass-dark", theme.grassDark);
+    root.style.setProperty("--water", theme.water);
+    root.style.setProperty("--fire", theme.fire);
+    root.style.setProperty("--electric", theme.electric);
+    root.style.setProperty("--violet", theme.violet);
+    root.style.setProperty("--danger", theme.danger);
+    root.style.setProperty("--battle-sky", edition.world.battleSky);
+    root.style.setProperty("--battle-ground", edition.world.battleGround);
+    document.body.dataset.gameEdition = edition.id;
+    document.title = `${edition.name} - Versioned Routes`;
+  }
+
+  function editionTrainer(trainerId) {
+    return getEdition().trainers[trainerId];
+  }
+
+  function editionNpcs() {
+    const edition = getEdition();
+    return NPCS.map((npc) => ({ ...npc, ...(edition.npcs[npc.id] || {}) }));
+  }
+
+  function worldPalette() {
+    return getEdition().world;
+  }
+
   function cleanPokemonForSave(pokemon) {
     const { stages, ...rest } = pokemon;
     return rest;
@@ -408,20 +683,24 @@
   }
 
   function renderTopline() {
+    const edition = getEdition();
+    els.gameTitle.textContent = state.edition ? edition.name : "PokeG v2";
     els.trainerName.textContent = state.trainer.name;
-    els.routeName.textContent = currentRouteName();
+    els.routeName.textContent = state.edition ? currentRouteName() : "Choose your edition";
     els.badgeCount.textContent = state.badges.length;
     els.moneyCount.textContent = `$${state.money}`;
     els.seenCount.textContent = state.dexSeen.length;
+    els.editionName.textContent = state.edition ? edition.shortName : "v2";
   }
 
   function renderQuest() {
-    let text = "Choose a starter";
-    if (state.party.length) text = "Talk with Professor Maple";
+    const edition = getEdition();
+    let text = state.edition ? "Choose a starter" : "Choose a version";
+    if (state.party.length) text = `Talk with ${edition.professor}`;
     if (state.flags.mapleGift) text = "Train in the tall grass";
-    if (state.flags.trainers.scout) text = "Find Rival Jules";
-    if (state.flags.trainers.rival) text = "Challenge Leader Aster";
-    if (state.badges.includes("Verdant Badge")) text = "Verdant Badge secured";
+    if (state.flags.trainers.scout) text = `Find ${edition.npcs.rival.name}`;
+    if (state.flags.trainers.rival) text = `Challenge ${edition.leaderName}`;
+    if (state.badges.includes(edition.leaderBadge)) text = `${edition.leaderBadge} secured`;
     els.questText.textContent = text;
   }
 
@@ -480,8 +759,9 @@
   }
 
   function renderBag() {
+    const edition = getEdition();
     const rows = [
-      ["Poke Balls", state.bag.balls, "Capture wild partners during encounters."],
+      [edition.ballName, state.bag.balls, "Capture wild partners during encounters."],
       ["Potions", state.bag.potions, "Restore 24 HP to a partner."],
       ["Berries", state.bag.berries, "A light snack that restores 12 HP outside battle."]
     ];
@@ -539,8 +819,27 @@
     `;
   }
 
+  function renderEditions() {
+    els.editionGrid.innerHTML = Object.values(EDITIONS).map((edition) => `
+      <button class="edition-card" type="button" data-edition="${edition.id}">
+        <div class="version-scene" aria-hidden="true">
+          <span class="scene-token">${edition.id === "ember" ? "FR" : "SA"}</span>
+          <span class="scene-token">${edition.id === "ember" ? "01" : "03"}</span>
+        </div>
+        <div>
+          <strong>${edition.cardTitle}</strong>
+          <div class="edition-tags">${edition.cardTags.map((tag) => `<span>${tag}</span>`).join("")}</div>
+          <p>${edition.cardText}</p>
+        </div>
+      </button>
+    `).join("");
+  }
+
   function renderStarters() {
-    els.starterGrid.innerHTML = STARTERS.map((id) => {
+    const edition = getEdition();
+    els.starterProfessor.textContent = edition.professor;
+    els.starterHeadline.textContent = edition.starterHeadline;
+    els.starterGrid.innerHTML = edition.starters.map((id) => {
       const species = speciesOf(id);
       const move = MOVES[movesForLevel(id, 5).find((key) => MOVES[key].type === species.types[0]) || movesForLevel(id, 5)[0]];
       return `
@@ -556,14 +855,31 @@
     }).join("");
   }
 
+  function chooseEdition(editionId) {
+    if (!EDITIONS[editionId]) return;
+    state = freshState(editionId);
+    applyEditionTheme();
+    renderStarters();
+    els.editionModal.hidden = true;
+    els.starterModal.hidden = false;
+    showToast(`${getEdition().shortName} selected.`);
+    renderAll();
+    tone(392, 0.07, "triangle");
+    tone(659, 0.09, "triangle", 0.07);
+  }
+
   function startGame(starterId) {
-    state = freshState();
+    const editionId = state.edition || "ember";
+    state = freshState(editionId);
+    applyEditionTheme();
     const starter = createPokemon(starterId, 5);
     state.party.push(starter);
     state.activeIndex = 0;
     markSeen(starterId);
     markCaught(starterId);
     pushLog(`${starter.name} joined your party.`);
+    pushLog(`${getEdition().shortName} journey started.`);
+    els.editionModal.hidden = true;
     els.starterModal.hidden = true;
     showToast(`${starter.name} joined your party.`);
     saveGame(false);
@@ -581,7 +897,7 @@
     }
     drawBuildings();
     const actors = [
-      ...NPCS.map((npc) => ({ kind: "npc", y: npc.y, actor: npc })),
+      ...editionNpcs().map((npc) => ({ kind: "npc", y: npc.y, actor: npc })),
       { kind: "player", y: state.player.y, actor: state.player }
     ].sort((a, b) => a.y - b.y);
     actors.forEach((entry) => {
@@ -595,14 +911,15 @@
     const px = x * WORLD.tile;
     const py = y * WORLD.tile;
     const h = hash(x, y);
+    const palette = worldPalette();
     const baseTile = tile === "building" ? "meadow" : tile;
     const colors = {
-      meadow: h % 3 === 0 ? "#83c96c" : "#8bd173",
-      tallgrass: h % 2 === 0 ? "#5fae57" : "#67b95c",
-      path: h % 2 === 0 ? "#d7b779" : "#dec486",
-      water: "#57b9da",
-      tree: "#327047",
-      rock: "#7c8179"
+      meadow: h % 3 === 0 ? palette.meadow[0] : palette.meadow[1],
+      tallgrass: h % 2 === 0 ? palette.tallgrass[0] : palette.tallgrass[1],
+      path: h % 2 === 0 ? palette.path[0] : palette.path[1],
+      water: palette.water,
+      tree: palette.tree[0],
+      rock: palette.rock
     };
     ctx.fillStyle = colors[baseTile] || colors.meadow;
     ctx.fillRect(px, py, WORLD.tile, WORLD.tile);
@@ -633,9 +950,9 @@
     }
 
     if (baseTile === "tree") {
-      ctx.fillStyle = "#204b34";
+      ctx.fillStyle = palette.treeTrunk;
       ctx.fillRect(px + 12, py + 17, 8, 13);
-      ctx.fillStyle = h % 2 === 0 ? "#2d7d4a" : "#2f8951";
+      ctx.fillStyle = h % 2 === 0 ? palette.tree[0] : palette.tree[1];
       ctx.beginPath();
       ctx.arc(px + 16, py + 13, 14, 0, Math.PI * 2);
       ctx.fill();
@@ -644,7 +961,7 @@
     }
 
     if (baseTile === "rock") {
-      ctx.fillStyle = "#696e67";
+      ctx.fillStyle = palette.rock;
       ctx.beginPath();
       ctx.moveTo(px + 7, py + 26);
       ctx.lineTo(px + 12, py + 9);
@@ -658,6 +975,7 @@
   }
 
   function drawBuildings() {
+    const edition = getEdition();
     BUILDINGS.forEach((building) => {
       const x = building.x * WORLD.tile;
       const y = building.y * WORLD.tile;
@@ -667,7 +985,7 @@
       ctx.fillRect(x + 5, y + h - 4, w, 8);
       ctx.fillStyle = building.body;
       ctx.fillRect(x + 8, y + 24, w - 16, h - 24);
-      ctx.fillStyle = building.roof;
+      ctx.fillStyle = edition.buildingRoofs[building.id] || building.roof;
       ctx.fillRect(x, y + 8, w, 34);
       ctx.fillStyle = "rgba(0,0,0,0.2)";
       ctx.fillRect(x, y + 38, w, 5);
@@ -789,25 +1107,30 @@
   function isBlocked(x, y) {
     const tile = tileAt(x, y);
     if (["tree", "rock", "water", "building"].includes(tile)) return true;
-    return NPCS.some((npc) => npc.x === x && npc.y === y);
+    return editionNpcs().some((npc) => npc.x === x && npc.y === y);
+  }
+
+  function routeKey() {
+    const { x, y } = state.player;
+    if (x <= 9 && y <= 8) return "town";
+    if (x >= 24 && y <= 9) return "gym";
+    if (x >= 24 && y >= 12) return "coast";
+    if (x <= 12 && y >= 15) return "granite";
+    if (x >= 18 && y >= 8 && y <= 15) return "orchard";
+    if (x >= 7 && x <= 14 && y >= 8) return "meadow";
+    return "road";
   }
 
   function currentRouteName() {
-    const { x, y } = state.player;
-    if (x <= 9 && y <= 8) return "Maple Town";
-    if (x >= 24 && y <= 9) return "Aster Gym Gate";
-    if (x >= 24 && y >= 12) return "Copperwash Coast";
-    if (x <= 12 && y >= 15) return "Granite Cut";
-    if (x >= 18 && y >= 8 && y <= 15) return "Night Orchard";
-    if (x >= 7 && x <= 14 && y >= 8) return "Sproutline Meadow";
-    return "Amber Road";
+    const edition = getEdition();
+    return edition.routeNames[routeKey()] || edition.routeNames.road;
   }
 
   function encounterArea() {
-    const route = currentRouteName();
-    if (route === "Copperwash Coast") return "coast";
-    if (route === "Granite Cut") return "granite";
-    if (route === "Night Orchard") return "orchard";
+    const route = routeKey();
+    if (route === "coast") return "coast";
+    if (route === "granite") return "granite";
+    if (route === "orchard") return "orchard";
     return "meadow";
   }
 
@@ -834,7 +1157,7 @@
   function maybeWildEncounter() {
     if (!state.party.length || state.battle) return;
     if (tileAt(state.player.x, state.player.y) !== "tallgrass") return;
-    const rate = state.badges.includes("Verdant Badge") ? 0.1 : 0.14;
+    const rate = state.badges.includes(getEdition().leaderBadge) ? 0.1 : 0.14;
     if (Math.random() > rate) return;
     const area = encounterArea();
     const wild = chooseWildPokemon(area);
@@ -851,7 +1174,8 @@
   }
 
   function chooseWildPokemon(area) {
-    const table = ENCOUNTERS[area] || ENCOUNTERS.meadow;
+    const encounters = getEdition().encounters;
+    const table = encounters[area] || encounters.meadow;
     const total = table.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * total;
     let chosen = table[0];
@@ -872,7 +1196,7 @@
     if (isLocked()) return;
     const delta = DIRS[state.player.dir] || DIRS.down;
     const target = { x: state.player.x + delta.x, y: state.player.y + delta.y };
-    const npc = NPCS.find((entry) => entry.x === target.x && entry.y === target.y);
+    const npc = editionNpcs().find((entry) => entry.x === target.x && entry.y === target.y);
     if (npc) {
       interactNpc(npc);
       return;
@@ -883,7 +1207,7 @@
       return;
     }
     if (building && building.id === "gym") {
-      showToast("Leader Aster is waiting by the arena gate.");
+      showToast(`${getEdition().leaderName} is waiting by the arena gate.`);
       return;
     }
     if (building && building.id === "lab") {
@@ -918,18 +1242,19 @@
 
   function professorGift() {
     if (!state.party.length) return;
+    const edition = getEdition();
     if (state.flags.mapleGift) {
-      showToast("Professor Maple is tracking rare signals near the coast.");
-      pushLog("Professor Maple pointed toward the coast.");
+      showToast(edition.giftRepeat);
+      pushLog(edition.giftLog);
       renderAll();
       return;
     }
     state.flags.mapleGift = true;
-    state.bag.balls += 6;
+    state.bag.balls += edition.id === "sapphire" ? 8 : 6;
     state.bag.potions += 2;
-    state.money += 120;
-    pushLog("Professor Maple stocked your bag for the road.");
-    showToast("Received 6 Poke Balls, 2 Potions, and $120.");
+    state.money += edition.id === "sapphire" ? 140 : 120;
+    pushLog(`${edition.professor} stocked your bag for the road.`);
+    showToast(edition.giftReceived);
     saveGame(false);
     renderAll();
     tone(659, 0.08, "triangle");
@@ -953,14 +1278,14 @@
   }
 
   function startTrainerBattle(trainerId) {
-    const trainer = TRAINERS[trainerId];
+    const trainer = editionTrainer(trainerId);
     if (!trainer) return;
     if (state.flags.trainers[trainerId]) {
       showToast(`${trainer.name} nods in respect.`);
       return;
     }
     if (trainerId === "leader" && !state.flags.trainers.rival) {
-      showToast("Leader Aster points back toward the east road.");
+      showToast(`${getEdition().leaderName} points back toward the east road.`);
       return;
     }
     const team = trainerTeam(trainerId);
@@ -971,6 +1296,7 @@
       trainerName: trainer.name,
       reward: trainer.reward,
       badge: trainer.badge || "",
+      badgeText: trainer.badgeText || getEdition().badgeText,
       enemies: team,
       enemyIndex: 0,
       log: [trainer.intro],
@@ -981,12 +1307,22 @@
   }
 
   function trainerTeam(trainerId) {
-    const trainer = TRAINERS[trainerId];
+    const trainer = editionTrainer(trainerId);
+    const edition = getEdition();
     const avg = partyAverageLevel();
     if (trainer.dynamic === "rival") {
       const starterType = state.party[0] ? typesOf(state.party[0])[0] : "grass";
-      const counter = starterType === "grass" ? 4 : starterType === "fire" ? 7 : starterType === "water" ? 1 : 27;
+      const counter = edition.id === "sapphire"
+        ? starterType === "grass" ? 255 : starterType === "fire" ? 258 : starterType === "water" ? 252 : 261
+        : starterType === "grass" ? 4 : starterType === "fire" ? 7 : starterType === "water" ? 1 : 27;
       const scale = clamp(Math.round(avg + 1), 7, 13);
+      if (edition.id === "sapphire") {
+        return [
+          createPokemon(263, scale),
+          createPokemon(counter, scale + 1),
+          createPokemon(278, Math.max(7, scale))
+        ];
+      }
       return [
         createPokemon(133, scale),
         createPokemon(counter, scale + 1),
@@ -995,6 +1331,13 @@
     }
     if (trainer.dynamic === "leader") {
       const scale = clamp(Math.round(avg + 2), 11, 18);
+      if (edition.id === "sapphire") {
+        return [
+          createPokemon(270, scale),
+          createPokemon(318, scale + 1),
+          createPokemon(363, scale + 2)
+        ];
+      }
       return [
         createPokemon(43, scale),
         createPokemon(102, scale + 1),
@@ -1048,7 +1391,7 @@
       `;
     }).join("");
     els.catchButton.disabled = disableActions || battle.kind !== "wild" || state.bag.balls <= 0;
-    els.catchButton.textContent = `Poke Ball (${state.bag.balls})`;
+    els.catchButton.textContent = `${getEdition().ballName.replace(/s$/, "")} (${state.bag.balls})`;
     els.potionButton.disabled = battle.locked || battle.ended || battle.forcedSwitch || state.bag.potions <= 0 || !player || player.hp >= player.maxHp;
     els.potionButton.textContent = `Potion (${state.bag.potions})`;
     els.switchButton.disabled = battle.locked || battle.ended || partyAliveCount() <= 1;
@@ -1227,7 +1570,7 @@
           state.badges.push(battle.badge);
           battle.log.push(`${battle.badge} earned.`);
           battle.finishTitle = `${battle.badge} earned`;
-          battle.finishText = "Aster opens the longer routes, and your dex signal now marks rare encounters more clearly.";
+          battle.finishText = battle.badgeText || getEdition().badgeText;
         }
         pushLog(`Defeated ${battle.trainerName}.`);
       } else {
@@ -1243,16 +1586,17 @@
 
   function blackOut() {
     const battle = state.battle;
+    const clinicName = `${getEdition().routeNames.town} Clinic`;
     const loss = Math.min(state.money, Math.max(20, Math.floor(state.money * 0.18)));
     state.money -= loss;
-    battle.log.push(`You dropped $${loss} getting back to Maple Clinic.`);
+    battle.log.push(`You dropped $${loss} getting back to ${clinicName}.`);
     battle.ended = true;
     battle.locked = false;
     battle.forcedSwitch = false;
     state.player.x = 5;
     state.player.y = 7;
     healParty(false);
-    pushLog("You recovered at Maple Clinic.");
+    pushLog(`You recovered at ${clinicName}.`);
     renderAfterBattleAction();
   }
 
@@ -1267,7 +1611,7 @@
     const enemy = battleEnemy();
     state.bag.balls -= 1;
     battle.locked = true;
-    battle.log.push(`You threw a Poke Ball at ${enemy.name}.`);
+    battle.log.push(`You threw a ${getEdition().ballName.replace(/s$/, "")} at ${enemy.name}.`);
     const species = speciesOf(enemy.speciesId);
     const hpFactor = (3 * enemy.maxHp - 2 * enemy.hp) / (3 * enemy.maxHp);
     const badgeBoost = state.badges.length ? 1.08 : 1;
@@ -1628,7 +1972,7 @@
   }
 
   function isLocked() {
-    return !els.starterModal.hidden || !els.finishModal.hidden || !!state.battle;
+    return !els.editionModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || !!state.battle;
   }
 
   function hash(x, y) {
@@ -1739,6 +2083,11 @@
   }, 50);
 
   document.addEventListener("click", (event) => {
+    const editionButton = event.target.closest(".edition-card[data-edition]");
+    if (editionButton) {
+      chooseEdition(editionButton.dataset.edition);
+      return;
+    }
     const starter = event.target.closest("[data-starter]");
     if (starter) {
       startGame(Number(starter.dataset.starter));
@@ -1813,7 +2162,9 @@
     if (!ok) return;
     localStorage.removeItem(SAVE_KEY);
     state = freshState();
-    els.starterModal.hidden = false;
+    applyEditionTheme("ember");
+    els.editionModal.hidden = false;
+    els.starterModal.hidden = true;
     els.finishModal.hidden = true;
     els.battleOverlay.hidden = true;
     renderAll();
@@ -1826,7 +2177,9 @@
     localStorage.removeItem(SAVE_KEY);
     state = freshState();
     els.finishModal.hidden = true;
-    els.starterModal.hidden = false;
+    applyEditionTheme("ember");
+    els.editionModal.hidden = false;
+    els.starterModal.hidden = true;
     renderAll();
   });
   els.battleCloseButton.addEventListener("click", closeBattle);

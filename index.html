@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7fbf2">
-  <title>PokeG - Route & Battle</title>
+  <title>PokeG v2 - Versioned Routes</title>
   <link rel="preconnect" href="https://raw.githubusercontent.com">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,14 +14,15 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">PG</div>
         <div>
-          <h1>PokeG</h1>
-          <p id="routeName">Sproutline Meadow</p>
+          <h1 id="gameTitle">PokeG v2</h1>
+          <p id="routeName">Choose your edition</p>
         </div>
       </div>
       <div class="top-stats" aria-label="Trainer status">
         <div><span>Badges</span><strong id="badgeCount">0</strong></div>
         <div><span>Money</span><strong id="moneyCount">$300</strong></div>
         <div><span>Seen</span><strong id="seenCount">0</strong></div>
+        <div><span>Edition</span><strong id="editionName">v2</strong></div>
       </div>
       <div class="top-actions">
         <button class="icon-button" id="healButton" type="button" title="Heal party" aria-label="Heal party">
@@ -114,11 +115,21 @@
       </div>
     </section>
 
-    <section class="modal-layer" id="starterModal">
+    <section class="modal-layer" id="editionModal">
+      <div class="modal edition-modal">
+        <div class="modal-header">
+          <p>PokeG Version 2</p>
+          <h2>Choose your edition</h2>
+        </div>
+        <div class="edition-grid" id="editionGrid"></div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="starterModal" hidden>
       <div class="modal">
         <div class="modal-header">
-          <p>Professor Maple</p>
-          <h2>Choose your first partner</h2>
+          <p id="starterProfessor">Professor</p>
+          <h2 id="starterHeadline">Choose your first partner</h2>
         </div>
         <div class="starter-grid" id="starterGrid"></div>
       </div>
