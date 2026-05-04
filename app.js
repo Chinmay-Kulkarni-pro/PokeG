@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SAVE_KEY = "pokeg-route-battle-v2";
+  const SAVE_KEY = "pokeg-clone-base-v2";
   const SPRITE_BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
   const ANIMATED_BASE = `${SPRITE_BASE}/versions/generation-v/black-white/animated`;
   const WORLD = { width: 34, height: 22, tile: 32 };
@@ -43,6 +43,13 @@
     enemyCombatant: document.getElementById("enemyCombatant"),
     battleLog: document.getElementById("battleLog"),
     moveGrid: document.getElementById("moveGrid"),
+    pauseMenu: document.getElementById("pauseMenu"),
+    dialogBox: document.getElementById("dialogBox"),
+    dialogSpeaker: document.getElementById("dialogSpeaker"),
+    dialogText: document.getElementById("dialogText"),
+    menuButton: document.getElementById("menuButton"),
+    menuSaveButton: document.getElementById("menuSaveButton"),
+    menuCloseButton: document.getElementById("menuCloseButton"),
     catchButton: document.getElementById("catchButton"),
     potionButton: document.getElementById("potionButton"),
     switchButton: document.getElementById("switchButton"),
@@ -518,6 +525,7 @@
   const keysDown = new Set();
   let activeTab = "party";
   let state = freshState();
+  let camera = { x: 0, y: 0 };
   let lastMoveAt = 0;
   let toastTimer = 0;
   let audioContext = null;
@@ -540,6 +548,8 @@
       flags: { mapleGift: false, trainers: {} },
       log: [],
       battle: null,
+      dialog: null,
+      menuOpen: false,
       audioMuted: false
     };
   }
@@ -562,6 +572,8 @@
     merged.badges = Array.isArray(save.badges) ? save.badges : [];
     merged.log = Array.isArray(save.log) ? save.log.slice(0, 40) : [];
     merged.battle = null;
+    merged.dialog = null;
+    merged.menuOpen = false;
     if (merged.activeIndex >= merged.party.length) merged.activeIndex = 0;
     return merged;
   }
@@ -620,13 +632,15 @@
     const snapshot = {
       ...state,
       battle: null,
+      dialog: null,
+      menuOpen: false,
       party: state.party.map(cleanPokemonForSave),
       pc: state.pc.map(cleanPokemonForSave)
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot));
     if (manual) {
       pushLog("Game saved.");
-      showToast("Game saved.");
+      showDialog("Save", "Game saved.");
       tone(740, 0.055, "triangle");
       tone(980, 0.07, "triangle", 0.045);
     }
@@ -679,6 +693,8 @@
     renderTopline();
     renderSidePanels();
     renderQuest();
+    renderDialog();
+    renderPauseMenu();
     if (state.battle) renderBattle();
   }
 
@@ -819,6 +835,44 @@
     `;
   }
 
+  function renderDialog() {
+    const dialog = state.dialog;
+    els.dialogBox.hidden = !dialog;
+    if (!dialog) return;
+    els.dialogSpeaker.textContent = dialog.speaker || "";
+    els.dialogText.textContent = dialog.text || "";
+  }
+
+  function showDialog(speaker, text) {
+    state.menuOpen = false;
+    state.dialog = { speaker, text };
+    renderDialog();
+    renderPauseMenu();
+    tone(440, 0.035, "square");
+  }
+
+  function closeDialog() {
+    if (!state.dialog) return false;
+    state.dialog = null;
+    renderDialog();
+    return true;
+  }
+
+  function renderPauseMenu() {
+    els.pauseMenu.hidden = !state.menuOpen;
+    if (!state.menuOpen) return;
+    els.pauseMenu.querySelectorAll("[data-menu-tab]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.menuTab === activeTab);
+    });
+  }
+
+  function toggleMenu(force = null) {
+    if (!state.party.length || state.battle || !els.editionModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || state.dialog) return;
+    state.menuOpen = force === null ? !state.menuOpen : Boolean(force);
+    renderPauseMenu();
+    tone(state.menuOpen ? 523 : 392, 0.045, "triangle");
+  }
+
   function renderEditions() {
     els.editionGrid.innerHTML = Object.values(EDITIONS).map((edition) => `
       <button class="edition-card" type="button" data-edition="${edition.id}">
@@ -889,9 +943,16 @@
   }
 
   function drawWorld(time = 0) {
+    updateCamera();
     ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
-    for (let y = 0; y < WORLD.height; y += 1) {
-      for (let x = 0; x < WORLD.width; x += 1) {
+    ctx.fillStyle = "#111814";
+    ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
+    const startX = Math.max(0, Math.floor(camera.x / WORLD.tile) - 1);
+    const endX = Math.min(WORLD.width - 1, Math.ceil((camera.x + els.canvas.width) / WORLD.tile) + 1);
+    const startY = Math.max(0, Math.floor(camera.y / WORLD.tile) - 1);
+    const endY = Math.min(WORLD.height - 1, Math.ceil((camera.y + els.canvas.height) / WORLD.tile) + 1);
+    for (let y = startY; y <= endY; y += 1) {
+      for (let x = startX; x <= endX; x += 1) {
         drawTile(x, y, tileAt(x, y), time);
       }
     }
@@ -907,9 +968,16 @@
     requestAnimationFrame(drawWorld);
   }
 
+  function updateCamera() {
+    const targetX = state.player.x * WORLD.tile + WORLD.tile / 2 - els.canvas.width / 2;
+    const targetY = state.player.y * WORLD.tile + WORLD.tile / 2 - els.canvas.height / 2;
+    camera.x = clamp(targetX, 0, Math.max(0, WORLD.width * WORLD.tile - els.canvas.width));
+    camera.y = clamp(targetY, 0, Math.max(0, WORLD.height * WORLD.tile - els.canvas.height));
+  }
+
   function drawTile(x, y, tile, time) {
-    const px = x * WORLD.tile;
-    const py = y * WORLD.tile;
+    const px = x * WORLD.tile - camera.x;
+    const py = y * WORLD.tile - camera.y;
     const h = hash(x, y);
     const palette = worldPalette();
     const baseTile = tile === "building" ? "meadow" : tile;
@@ -977,8 +1045,8 @@
   function drawBuildings() {
     const edition = getEdition();
     BUILDINGS.forEach((building) => {
-      const x = building.x * WORLD.tile;
-      const y = building.y * WORLD.tile;
+      const x = building.x * WORLD.tile - camera.x;
+      const y = building.y * WORLD.tile - camera.y;
       const w = building.w * WORLD.tile;
       const h = building.h * WORLD.tile;
       ctx.fillStyle = "rgba(0,0,0,0.18)";
@@ -990,7 +1058,7 @@
       ctx.fillStyle = "rgba(0,0,0,0.2)";
       ctx.fillRect(x, y + 38, w, 5);
       ctx.fillStyle = "#513b2d";
-      ctx.fillRect(building.doorX * WORLD.tile + 6, y + h - 34, 20, 34);
+      ctx.fillRect(building.doorX * WORLD.tile - camera.x + 6, y + h - 34, 20, 34);
       ctx.fillStyle = "#ffe9a7";
       ctx.fillRect(x + 18, y + 50, 18, 14);
       ctx.fillRect(x + w - 36, y + 50, 18, 14);
@@ -1002,8 +1070,8 @@
   }
 
   function drawNpc(npc, time) {
-    const px = npc.x * WORLD.tile;
-    const py = npc.y * WORLD.tile;
+    const px = npc.x * WORLD.tile - camera.x;
+    const py = npc.y * WORLD.tile - camera.y;
     const bob = Math.sin(time / 340 + npc.x) * 1.5;
     ctx.fillStyle = "rgba(0,0,0,0.16)";
     ctx.beginPath();
@@ -1021,8 +1089,8 @@
   }
 
   function drawPlayer(player, time) {
-    const px = player.x * WORLD.tile;
-    const py = player.y * WORLD.tile;
+    const px = player.x * WORLD.tile - camera.x;
+    const py = player.y * WORLD.tile - camera.y;
     const moving = keysDown.size && !isLocked();
     const bob = moving ? Math.sin(time / 80) * 2 : Math.sin(time / 420) * 1;
     ctx.fillStyle = "rgba(0,0,0,0.18)";
@@ -1138,6 +1206,7 @@
     if (isLocked()) return;
     const delta = DIRS[dir];
     if (!delta) return;
+    state.menuOpen = false;
     state.player.dir = dir;
     const nextX = state.player.x + delta.x;
     const nextY = state.player.y + delta.y;
@@ -1207,14 +1276,14 @@
       return;
     }
     if (building && building.id === "gym") {
-      showToast(`${getEdition().leaderName} is waiting by the arena gate.`);
+      showDialog(getEdition().leaderName, "The gym challenge waits at the arena gate.");
       return;
     }
     if (building && building.id === "lab") {
       professorGift();
       return;
     }
-    showToast("The route hums quietly.");
+    showDialog("", "The route hums quietly.");
   }
 
   function interactNpc(npc) {
@@ -1244,7 +1313,7 @@
     if (!state.party.length) return;
     const edition = getEdition();
     if (state.flags.mapleGift) {
-      showToast(edition.giftRepeat);
+      showDialog(edition.professor, edition.giftRepeat);
       pushLog(edition.giftLog);
       renderAll();
       return;
@@ -1254,7 +1323,7 @@
     state.bag.potions += 2;
     state.money += edition.id === "sapphire" ? 140 : 120;
     pushLog(`${edition.professor} stocked your bag for the road.`);
-    showToast(edition.giftReceived);
+    showDialog(edition.professor, edition.giftReceived);
     saveGame(false);
     renderAll();
     tone(659, 0.08, "triangle");
@@ -1263,13 +1332,14 @@
 
   function healParty(show = false) {
     if (!state.party.length) return;
+    const nurse = getEdition().npcs.nurse.name;
     state.party.forEach((pokemon) => {
       pokemon.hp = pokemon.maxHp;
       pokemon.stages = { attack: 0, defense: 0, speed: 0 };
     });
     state.activeIndex = firstAliveIndex();
     pushLog("Your party was healed.");
-    if (show) showToast("Your party was healed.");
+    if (show) showDialog(nurse, "Your party was healed.");
     saveGame(false);
     renderAll();
     tone(523, 0.08, "sine");
@@ -1281,11 +1351,11 @@
     const trainer = editionTrainer(trainerId);
     if (!trainer) return;
     if (state.flags.trainers[trainerId]) {
-      showToast(`${trainer.name} nods in respect.`);
+      showDialog(trainer.name, "We already battled. Keep training.");
       return;
     }
     if (trainerId === "leader" && !state.flags.trainers.rival) {
-      showToast(`${getEdition().leaderName} points back toward the east road.`);
+      showDialog(getEdition().leaderName, "Find your rival on the east road first.");
       return;
     }
     const team = trainerTeam(trainerId);
@@ -1972,7 +2042,7 @@
   }
 
   function isLocked() {
-    return !els.editionModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || !!state.battle;
+    return !els.editionModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || !!state.battle || !!state.dialog || state.menuOpen;
   }
 
   function hash(x, y) {
@@ -2053,8 +2123,19 @@
   document.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
     const movement = { arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" };
+    if ((key === " " || key === "enter") && state.dialog) {
+      event.preventDefault();
+      closeDialog();
+      return;
+    }
+    if (key === "escape" || key === "m") {
+      event.preventDefault();
+      toggleMenu();
+      return;
+    }
     if (movement[key]) {
       event.preventDefault();
+      if (isLocked()) return;
       keysDown.add(movement[key]);
       if (performance.now() - lastMoveAt > 120) {
         tryMove(movement[key]);
@@ -2063,6 +2144,10 @@
     }
     if (key === " " || key === "enter") {
       event.preventDefault();
+      if (state.menuOpen) {
+        toggleMenu(false);
+        return;
+      }
       interact();
     }
   });
@@ -2083,6 +2168,17 @@
   }, 50);
 
   document.addEventListener("click", (event) => {
+    if (event.target.closest("#dialogBox")) {
+      closeDialog();
+      return;
+    }
+    const menuTab = event.target.closest("[data-menu-tab]");
+    if (menuTab) {
+      activeTab = menuTab.dataset.menuTab;
+      renderSidePanels();
+      renderPauseMenu();
+      return;
+    }
     const editionButton = event.target.closest(".edition-card[data-edition]");
     if (editionButton) {
       chooseEdition(editionButton.dataset.edition);
@@ -2148,7 +2244,16 @@
     button.addEventListener("click", () => tryMove(move));
   });
 
-  els.mobileAction.addEventListener("click", interact);
+  els.menuButton.addEventListener("click", () => toggleMenu());
+  els.menuSaveButton.addEventListener("click", () => {
+    if (!state.party.length) return;
+    saveGame(true);
+  });
+  els.menuCloseButton.addEventListener("click", () => toggleMenu(false));
+  els.mobileAction.addEventListener("click", () => {
+    if (closeDialog()) return;
+    interact();
+  });
   els.healButton.addEventListener("click", () => healParty(true));
   els.saveButton.addEventListener("click", () => saveGame(true));
   els.audioButton.addEventListener("click", () => {

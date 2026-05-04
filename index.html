@@ -25,6 +25,9 @@
         <div><span>Edition</span><strong id="editionName">v2</strong></div>
       </div>
       <div class="top-actions">
+        <button class="icon-button" id="menuButton" type="button" title="Menu" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v2H5zm0 5h14v2H5zm0 5h14v2H5z"/></svg>
+        </button>
         <button class="icon-button" id="healButton" type="button" title="Heal party" aria-label="Heal party">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
         </button>
@@ -50,7 +53,20 @@
           <div class="quest-chip" id="questText">Choose a starter</div>
         </div>
         <div class="world-frame">
-          <canvas id="worldCanvas" width="1088" height="704" aria-label="Map"></canvas>
+          <canvas id="worldCanvas" width="768" height="512" aria-label="Map"></canvas>
+          <div class="pause-menu" id="pauseMenu" hidden>
+            <button type="button" data-menu-tab="party">Pokemon</button>
+            <button type="button" data-menu-tab="bag">Bag</button>
+            <button type="button" data-menu-tab="dex">Pokedex</button>
+            <button type="button" data-menu-tab="log">Trainer</button>
+            <button type="button" id="menuSaveButton">Save</button>
+            <button type="button" id="menuCloseButton">Close</button>
+          </div>
+          <div class="dialog-box" id="dialogBox" role="dialog" aria-live="polite" hidden>
+            <strong id="dialogSpeaker"></strong>
+            <p id="dialogText"></p>
+            <span aria-hidden="true"></span>
+          </div>
           <div class="toast" id="toast" role="status" aria-live="polite"></div>
         </div>
         <div class="mobile-controls" aria-label="Movement controls">
