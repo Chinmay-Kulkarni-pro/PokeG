@@ -1,10 +1,10 @@
 (() => {
   "use strict";
 
-  const SAVE_KEY = "pokeg-clone-base-v2";
+  const SAVE_KEY = "pokeg-grand-region-v3";
   const SPRITE_BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
   const ANIMATED_BASE = `${SPRITE_BASE}/versions/generation-v/black-white/animated`;
-  const WORLD = { width: 34, height: 22, tile: 32 };
+  const WORLD = { width: 96, height: 72, tile: 32 };
   const DIRS = {
     up: { x: 0, y: -1 },
     down: { x: 0, y: 1 },
@@ -25,18 +25,39 @@
     toast: document.getElementById("toast"),
     partyPanel: document.getElementById("partyPanel"),
     bagPanel: document.getElementById("bagPanel"),
+    mapPanel: document.getElementById("mapPanel"),
     dexPanel: document.getElementById("dexPanel"),
     logPanel: document.getElementById("logPanel"),
     editionModal: document.getElementById("editionModal"),
     editionGrid: document.getElementById("editionGrid"),
+    introModal: document.getElementById("introModal"),
+    introKicker: document.getElementById("introKicker"),
+    introTitle: document.getElementById("introTitle"),
+    introScene: document.getElementById("introScene"),
+    introText: document.getElementById("introText"),
+    introNextButton: document.getElementById("introNextButton"),
+    introSkipButton: document.getElementById("introSkipButton"),
     starterModal: document.getElementById("starterModal"),
     starterProfessor: document.getElementById("starterProfessor"),
     starterHeadline: document.getElementById("starterHeadline"),
     starterGrid: document.getElementById("starterGrid"),
+    mapModal: document.getElementById("mapModal"),
+    regionMapModal: document.getElementById("regionMapModal"),
+    mapCloseButton: document.getElementById("mapCloseButton"),
+    interiorModal: document.getElementById("interiorModal"),
+    interiorKicker: document.getElementById("interiorKicker"),
+    interiorTitle: document.getElementById("interiorTitle"),
+    interiorScene: document.getElementById("interiorScene"),
+    interiorText: document.getElementById("interiorText"),
+    interiorPrimaryButton: document.getElementById("interiorPrimaryButton"),
+    interiorSecondaryButton: document.getElementById("interiorSecondaryButton"),
+    interiorExitButton: document.getElementById("interiorExitButton"),
     finishModal: document.getElementById("finishModal"),
     finishTitle: document.getElementById("finishTitle"),
     finishText: document.getElementById("finishText"),
     battleOverlay: document.getElementById("battleOverlay"),
+    battleStage: document.getElementById("battleStage"),
+    battleFlash: document.getElementById("battleFlash"),
     battleTitle: document.getElementById("battleTitle"),
     battleCloseButton: document.getElementById("battleCloseButton"),
     playerCombatant: document.getElementById("playerCombatant"),
@@ -55,6 +76,8 @@
     switchButton: document.getElementById("switchButton"),
     fleeButton: document.getElementById("fleeButton"),
     switchPanel: document.getElementById("switchPanel"),
+    mapButton: document.getElementById("mapButton"),
+    journalButton: document.getElementById("journalButton"),
     healButton: document.getElementById("healButton"),
     saveButton: document.getElementById("saveButton"),
     audioButton: document.getElementById("audioButton"),
@@ -262,41 +285,467 @@
     fairy: { double: ["fighting", "dragon", "dark"], half: ["fire", "poison", "steel"] }
   };
 
-  const BUILDINGS = [
-    { id: "clinic", name: "Clinic", x: 3, y: 2, w: 5, h: 4, roof: "#ef704b", body: "#fff8e8", doorX: 5 },
-    { id: "lab", name: "Lab", x: 13, y: 15, w: 6, h: 4, roof: "#5bb9d6", body: "#f9f4df", doorX: 16 },
-    { id: "gym", name: "Gym", x: 25, y: 2, w: 6, h: 5, roof: "#7567d9", body: "#f7f0e8", doorX: 28 }
+  const CITY_DEFS = [
+    { id: "lumen", name: "Lumen Village", x: 5, y: 5, w: 15, h: 11, color: "#e6d2a2", role: "home" },
+    { id: "bracken", name: "Bracken City", x: 29, y: 5, w: 15, h: 12, color: "#c9d796", gym: "gym-bracken" },
+    { id: "quarry", name: "Quarry Town", x: 54, y: 6, w: 16, h: 12, color: "#c9beb0", gym: "gym-quarry" },
+    { id: "harbor", name: "Harborside City", x: 76, y: 12, w: 15, h: 12, color: "#b9d6d8", gym: "gym-harbor" },
+    { id: "emberfall", name: "Emberfall City", x: 72, y: 34, w: 16, h: 12, color: "#d9b48d", gym: "gym-emberfall" },
+    { id: "crown", name: "Crown City", x: 67, y: 55, w: 18, h: 12, color: "#d7c9e5", role: "league" },
+    { id: "frostvale", name: "Frostvale City", x: 49, y: 50, w: 16, h: 12, color: "#c7dde2", gym: "gym-frostvale" },
+    { id: "neon", name: "Neon Heights", x: 24, y: 48, w: 16, h: 12, color: "#c8c3df", gym: "gym-neon" },
+    { id: "thornmere", name: "Thornmere City", x: 6, y: 37, w: 16, h: 12, color: "#c0ce9a", gym: "gym-thornmere" },
+    { id: "astral", name: "Astral City", x: 40, y: 27, w: 16, h: 12, color: "#d4c5df", gym: "gym-astral" }
   ];
 
-  const NPCS = [
-    { id: "nurse", name: "Nurse Luma", x: 5, y: 6, color: "#ef704b", action: "heal" },
-    { id: "professor", name: "Professor Maple", x: 16, y: 14, color: "#5bb9d6", action: "gift" },
-    { id: "scout", name: "Scout Ren", x: 11, y: 10, color: "#7fbf5f", action: "trainer", trainerId: "scout" },
-    { id: "rival", name: "Rival Jules", x: 22, y: 11, color: "#f1c84b", action: "trainer", trainerId: "rival" },
-    { id: "leader", name: "Leader Aster", x: 28, y: 8, color: "#7567d9", action: "trainer", trainerId: "leader" }
+  const GYM_DEFS = [
+    { trainerId: "gym-bracken", cityId: "bracken", leader: "Leader Sylva", badge: "Briar Badge", type: "grass", rank: 1, roof: "#4e9e56" },
+    { trainerId: "gym-quarry", cityId: "quarry", leader: "Leader Flint", badge: "Granite Badge", type: "rock", rank: 2, roof: "#8a7a62" },
+    { trainerId: "gym-harbor", cityId: "harbor", leader: "Leader Maris", badge: "Harbor Badge", type: "water", rank: 3, roof: "#3398c8" },
+    { trainerId: "gym-emberfall", cityId: "emberfall", leader: "Leader Cinder", badge: "Cinder Badge", type: "fire", rank: 4, roof: "#d86242" },
+    { trainerId: "gym-frostvale", cityId: "frostvale", leader: "Leader Noelle", badge: "Glacier Badge", type: "ice", rank: 5, roof: "#67bec7" },
+    { trainerId: "gym-neon", cityId: "neon", leader: "Leader Volt", badge: "Neon Badge", type: "electric", rank: 6, roof: "#d5b125" },
+    { trainerId: "gym-thornmere", cityId: "thornmere", leader: "Leader Mallow", badge: "Venom Badge", type: "poison", rank: 7, roof: "#8e55b7" },
+    { trainerId: "gym-astral", cityId: "astral", leader: "Leader Sol", badge: "Astral Badge", type: "psychic", rank: 8, roof: "#dc5c94" }
   ];
+
+  const ROAD_SEGMENTS = [
+    { x1: 12, y1: 10, x2: 36, y2: 10, w: 1 },
+    { x1: 36, y1: 10, x2: 62, y2: 12, w: 1 },
+    { x1: 62, y1: 12, x2: 83, y2: 17, w: 1 },
+    { x1: 83, y1: 17, x2: 83, y2: 40, w: 1 },
+    { x1: 80, y1: 40, x2: 80, y2: 61, w: 1 },
+    { x1: 57, y1: 56, x2: 80, y2: 61, w: 1 },
+    { x1: 32, y1: 54, x2: 57, y2: 56, w: 1 },
+    { x1: 14, y1: 43, x2: 32, y2: 54, w: 1 },
+    { x1: 14, y1: 43, x2: 48, y2: 33, w: 1 },
+    { x1: 48, y1: 33, x2: 36, y2: 10, w: 1 },
+    { x1: 48, y1: 33, x2: 80, y2: 40, w: 1 },
+    { x1: 32, y1: 54, x2: 48, y2: 33, w: 1 }
+  ];
+
+  const WILD_ZONES = [
+    { id: "sunpetal", name: "Sunpetal Route", x: 19, y: 4, w: 11, h: 12, encounter: "meadow" },
+    { id: "boulderpass", name: "Boulderpass", x: 44, y: 4, w: 12, h: 17, encounter: "granite" },
+    { id: "saltwind", name: "Saltwind Coast", x: 69, y: 10, w: 8, h: 20, encounter: "coast" },
+    { id: "ashrun", name: "Ashrun Trail", x: 63, y: 29, w: 10, h: 18, encounter: "granite" },
+    { id: "snowmelt", name: "Snowmelt Pass", x: 47, y: 41, w: 16, h: 10, encounter: "orchard" },
+    { id: "sparkline", name: "Sparkline Flats", x: 22, y: 38, w: 20, h: 10, encounter: "meadow" },
+    { id: "murkwood", name: "Murkwood", x: 3, y: 25, w: 22, h: 13, encounter: "orchard" },
+    { id: "starfall", name: "Starfall Garden", x: 35, y: 20, w: 25, h: 10, encounter: "orchard" },
+    { id: "crownroad", name: "Crown Road", x: 61, y: 46, w: 15, h: 12, encounter: "meadow" }
+  ];
+
+  const GATE_DEFS = [
+    { id: "bracken-east", x: 44, y: 9, w: 2, h: 3, badge: "Briar Badge", title: "Briar Gate", text: "Bracken's east gate opens after the Briar Badge." },
+    { id: "quarry-east", x: 70, y: 11, w: 2, h: 3, badge: "Granite Badge", trainer: "umbra-quarry", title: "Quarry Checkpoint", text: "The checkpoint needs the Granite Badge and Team Umbra cleared from the cable road." },
+    { id: "harbor-south", x: 82, y: 28, w: 3, h: 2, badge: "Harbor Badge", title: "Ferry Bridge", text: "The ferry bridge lowers after the Harbor Badge." },
+    { id: "ember-south", x: 78, y: 48, w: 3, h: 2, badge: "Cinder Badge", title: "Ashlift Gate", text: "Hot ash blocks the southern lift until the Cinder Badge is certified." },
+    { id: "frost-west", x: 44, y: 55, w: 2, h: 3, badge: "Glacier Badge", title: "Snowmelt Gate", text: "The icy road crew opens this gate after the Glacier Badge." },
+    { id: "neon-west", x: 22, y: 50, w: 2, h: 3, badge: "Neon Badge", title: "Power Gate", text: "Neon power is needed before the west gate can safely open." },
+    { id: "thorn-astral", x: 34, y: 38, w: 3, h: 2, badge: "Venom Badge", title: "Murkwood Crossing", text: "Thornmere's mist thins after the Venom Badge." },
+    { id: "crown-gate", x: 66, y: 59, w: 2, h: 3, badge: "Astral Badge", title: "Crown Gate", text: "Eight badges are required beyond this gate." }
+  ];
+
+  const CITY_LOCKS = {
+    quarry: { badge: "Briar Badge", text: "Quarry Town's tram opens once Bracken certifies the Briar Badge." },
+    harbor: { badge: "Granite Badge", trainer: "umbra-quarry", text: "Harborside is holding arrivals until the Granite Badge is logged and Umbra leaves the cable road." },
+    emberfall: { badge: "Harbor Badge", text: "The ferry to Emberfall opens after the Harbor Badge." },
+    frostvale: { badge: "Cinder Badge", text: "Frostvale's ash-clearing lift opens after the Cinder Badge." },
+    neon: { badge: "Glacier Badge", text: "Neon Heights powers its bridge after the Glacier Badge." },
+    thornmere: { badge: "Neon Badge", text: "The Thornmere wardens open the west mist road after the Neon Badge." },
+    astral: { badge: "Venom Badge", trainer: "umbra-admin", text: "Astral City is locked down until the Venom Badge is earned and Admin Nyx is gone." },
+    crown: { badge: "Astral Badge", text: "Crown City accepts challengers only after the Astral Badge." }
+  };
+
+  const LANDMARKS = [
+    { cityId: "lumen", kind: "lab-dish", x: 17, y: 7, color: "#5bb9d6" },
+    { cityId: "bracken", kind: "tree-shrine", x: 36, y: 8, color: "#4e9e56" },
+    { cityId: "quarry", kind: "crane", x: 62, y: 8, color: "#8a7a62" },
+    { cityId: "harbor", kind: "lighthouse", x: 86, y: 14, color: "#3398c8" },
+    { cityId: "emberfall", kind: "furnace", x: 82, y: 37, color: "#d86242" },
+    { cityId: "crown", kind: "antenna", x: 76, y: 57, color: "#7567d9" },
+    { cityId: "frostvale", kind: "ice-spire", x: 58, y: 52, color: "#67bec7" },
+    { cityId: "neon", kind: "power-tower", x: 34, y: 50, color: "#d5b125" },
+    { cityId: "thornmere", kind: "mist-well", x: 15, y: 39, color: "#8e55b7" },
+    { cityId: "astral", kind: "observatory", x: 48, y: 29, color: "#dc5c94" }
+  ];
+
+  const ROUTE_NAMES = Object.fromEntries([
+    ...CITY_DEFS.map((city) => [city.id, city.name]),
+    ...WILD_ZONES.map((zone) => [zone.id, zone.name]),
+    ["road", "Grand Circuit Road"],
+    ["coast", "Tidebreak Water"],
+    ["woods", "Old Pine Wall"]
+  ]);
+
+  const INTRO_STEPS = [
+    {
+      kicker: "Professor",
+      title: "Welcome to the Grand Circuit",
+      scene: "professor",
+      text: "Ten cities ring the region, eight of them guarded by gym leaders. Your first partner will carry you from Lumen Village to Crown City."
+    },
+    {
+      kicker: "Rival",
+      title: "Jules Is Already Moving",
+      scene: "rival",
+      text: "Your rival Jules wants the same badges, but they keep noticing black vans, cut power lines, and strangers calling themselves Team Umbra."
+    },
+    {
+      kicker: "Region Map",
+      title: "A Circuit Built To Open Up",
+      scene: "map",
+      text: "Routes, gates, markets, clinics, wild zones, and city landmarks now react as you earn badges and stop Team Umbra's blackout plan."
+    }
+  ];
+
+  const BUILDINGS = createRegionBuildings();
+  const NPCS = createRegionNpcs();
 
   const TRAINERS = {
     scout: {
       name: "Scout Ren",
       reward: 96,
       intro: "Scout Ren wants to test your field instincts.",
-      team: [{ id: 10, level: 5 }, { id: 13, level: 5 }, { id: 16, level: 6 }]
+      team: [{ id: 10, level: 5 }, { id: 13, level: 5 }, { id: 16, level: 6 }],
+      storyLog: "Scout Ren marked tall-grass pockets across the circuit."
+    },
+    "rival-lumen": {
+      name: "Rival Jules",
+      reward: 160,
+      intro: "Rival Jules darts into the road with a grin and a brand-new plan.",
+      dynamic: "rival",
+      rank: 1,
+      storyLog: "Jules promised to race you to Bracken City."
+    },
+    "rival-quarry": {
+      name: "Rival Jules",
+      reward: 360,
+      intro: "Jules has been training in the quarry dust and wants proof it mattered.",
+      dynamic: "rival",
+      rank: 3,
+      minBadges: 2,
+      requiresTrainer: "rival-lumen",
+      storyLog: "Jules saw Team Umbra hauling black crates toward Astral City."
+    },
+    "rival-astral": {
+      name: "Rival Jules",
+      reward: 620,
+      intro: "Jules steadies their throw under the observatory lights.",
+      dynamic: "rival",
+      rank: 6,
+      minBadges: 5,
+      requiresTrainer: "rival-quarry",
+      storyLog: "Jules agreed to distract Umbra while you take the last gyms."
+    },
+    "rival-crown": {
+      name: "Rival Jules",
+      reward: 960,
+      intro: "At Crown Gate, Jules asks for one honest battle before the league.",
+      dynamic: "rival",
+      rank: 9,
+      minBadges: 8,
+      requiresTrainer: "rival-astral",
+      storyLog: "Jules is waiting at the league desk after Team Umbra falls."
+    },
+    "umbra-bracken": {
+      name: "Umbra Grunt Pax",
+      reward: 220,
+      intro: "Umbra Grunt Pax blocks the path with a crate stamped in black ink.",
+      team: [{ id: 19, level: 8 }, { id: 23, level: 9 }],
+      story: "umbra",
+      minBadges: 1,
+      storyLog: "Team Umbra is collecting gym signal stones."
+    },
+    "umbra-quarry": {
+      name: "Umbra Grunt Voss",
+      reward: 340,
+      intro: "Umbra Grunt Voss kicks gravel over a humming cable.",
+      team: [{ id: 41, level: 13 }, { id: 109, level: 14 }, { id: 27, level: 14 }],
+      story: "umbra",
+      minBadges: 2,
+      requiresTrainer: "umbra-bracken",
+      storyLog: "Umbra rerouted quarry power toward Astral City."
+    },
+    "umbra-admin": {
+      name: "Admin Nyx",
+      reward: 740,
+      intro: "Admin Nyx folds a star map shut and sends out a shadowed partner.",
+      team: [{ id: 92, level: 25 }, { id: 88, level: 26 }, { id: 262, level: 27 }],
+      story: "umbra",
+      minBadges: 5,
+      requiresTrainer: "umbra-quarry",
+      storyLog: "Admin Nyx fled to Crown City with the stolen signal core."
+    },
+    "umbra-boss": {
+      name: "Director Vey",
+      reward: 1600,
+      intro: "Director Vey stands beneath the Crown antenna and starts the blackout protocol.",
+      team: [{ id: 24, level: 38 }, { id: 81, level: 39 }, { id: 92, level: 40 }, { id: 143, level: 41 }],
+      story: "umbra",
+      minBadges: 8,
+      requiresTrainer: "umbra-admin",
+      storyLog: "Team Umbra's signal plot collapsed. Crown City lit up again."
+    },
+    "gym-bracken": {
+      name: "Leader Sylva",
+      reward: 680,
+      intro: "Leader Sylva bows beside a wall of living vines.",
+      badge: "Briar Badge",
+      gymRank: 1,
+      team: [{ id: 43, level: 8 }, { id: 69, level: 9 }, { id: 46, level: 10 }],
+      badgeText: "The Briar Badge opens the eastern circuit and teaches your team to hold steady in longer battles."
+    },
+    "gym-quarry": {
+      name: "Leader Flint",
+      reward: 900,
+      intro: "Leader Flint slams a pick into the arena floor.",
+      badge: "Granite Badge",
+      gymRank: 2,
+      team: [{ id: 74, level: 12 }, { id: 27, level: 13 }, { id: 95, level: 14 }],
+      badgeText: "The Granite Badge clears the quarry pass and gets Team Umbra nervous."
+    },
+    "gym-harbor": {
+      name: "Leader Maris",
+      reward: 1120,
+      intro: "Leader Maris lets the tide bell ring once before the battle.",
+      badge: "Harbor Badge",
+      gymRank: 3,
+      team: [{ id: 60, level: 16 }, { id: 54, level: 17 }, { id: 120, level: 18 }],
+      badgeText: "The Harbor Badge unlocks safe passage along Saltwind Coast."
+    },
+    "gym-emberfall": {
+      name: "Leader Cinder",
+      reward: 1360,
+      intro: "Leader Cinder smiles through the furnace glow.",
+      badge: "Cinder Badge",
+      gymRank: 4,
+      team: [{ id: 37, level: 20 }, { id: 58, level: 21 }, { id: 77, level: 22 }],
+      badgeText: "The Cinder Badge pushes the story south toward the colder routes."
+    },
+    "gym-frostvale": {
+      name: "Leader Noelle",
+      reward: 1620,
+      intro: "Leader Noelle's arena lights glint across polished ice.",
+      badge: "Glacier Badge",
+      gymRank: 5,
+      team: [{ id: 86, level: 24 }, { id: 90, level: 25 }, { id: 363, level: 26 }],
+      badgeText: "The Glacier Badge steadies your team before the neon highlands."
+    },
+    "gym-neon": {
+      name: "Leader Volt",
+      reward: 1880,
+      intro: "Leader Volt counts down as the gym floor starts to hum.",
+      badge: "Neon Badge",
+      gymRank: 6,
+      team: [{ id: 25, level: 28 }, { id: 100, level: 29 }, { id: 81, level: 30 }, { id: 309, level: 30 }],
+      badgeText: "The Neon Badge restores power to the west road scanners."
+    },
+    "gym-thornmere": {
+      name: "Leader Mallow",
+      reward: 2140,
+      intro: "Leader Mallow vanishes into purple mist, then laughs from the arena center.",
+      badge: "Venom Badge",
+      gymRank: 7,
+      team: [{ id: 23, level: 32 }, { id: 109, level: 33 }, { id: 88, level: 34 }, { id: 42, level: 35 }],
+      badgeText: "The Venom Badge breaks the last roadblock before Astral City."
+    },
+    "gym-astral": {
+      name: "Leader Sol",
+      reward: 2600,
+      intro: "Leader Sol reads the stars, then throws first.",
+      badge: "Astral Badge",
+      gymRank: 8,
+      team: [{ id: 63, level: 36 }, { id: 96, level: 37 }, { id: 102, level: 38 }, { id: 282, level: 39 }],
+      badgeText: "The Astral Badge completes the circuit. Crown City and Team Umbra's finale are waiting."
     },
     rival: {
       name: "Rival Jules",
       reward: 180,
       intro: "Rival Jules grins and tosses a polished ball.",
-      dynamic: "rival"
+      dynamic: "rival",
+      rank: 2
     },
     leader: {
-      name: "Leader Aster",
-      reward: 600,
-      intro: "Leader Aster accepts the challenge.",
-      badge: "Verdant Badge",
+      name: "Leader Sylva",
+      reward: 680,
+      intro: "Leader Sylva accepts the challenge.",
+      badge: "Briar Badge",
       dynamic: "leader"
     }
   };
+
+  function createRegionBuildings() {
+    const buildings = [];
+    const add = (building) => {
+      buildings.push({
+        body: "#fff8e8",
+        roof: "#6f8491",
+        doorX: building.x + Math.floor(building.w / 2),
+        ...building
+      });
+    };
+
+    CITY_DEFS.forEach((city) => {
+      add({
+        id: `clinic-${city.id}`,
+        kind: "clinic",
+        cityId: city.id,
+        name: "Clinic",
+        label: "CLINIC",
+        x: city.x + 1,
+        y: city.y + 1,
+        w: 4,
+        h: 3,
+        roof: "#ef704b",
+        body: "#fff8e8"
+      });
+      add({
+        id: `market-${city.id}`,
+        kind: "market",
+        cityId: city.id,
+        name: "Market",
+        label: "MART",
+        x: city.x + 1,
+        y: city.y + city.h - 4,
+        w: 4,
+        h: 3,
+        roof: "#f1c84b",
+        body: "#fff7df"
+      });
+      add({
+        id: `house-${city.id}`,
+        kind: "house",
+        cityId: city.id,
+        name: "House",
+        label: "HOME",
+        x: city.x + city.w - 5,
+        y: city.y + city.h - 4,
+        w: 4,
+        h: 3,
+        roof: "#8c6c54",
+        body: "#f9f0d8"
+      });
+
+      if (city.role === "home") {
+        add({
+          id: "lab-lumen",
+          kind: "lab",
+          cityId: city.id,
+          name: "Maple Lab",
+          label: "LAB",
+          x: city.x + 8,
+          y: city.y + 1,
+          w: 5,
+          h: 4,
+          roof: "#5bb9d6",
+          body: "#f9f4df"
+        });
+      }
+
+      if (city.role === "league") {
+        add({
+          id: "umbra-crown",
+          kind: "umbra",
+          cityId: city.id,
+          name: "Crown Station",
+          label: "STATION",
+          x: city.x + 6,
+          y: city.y + 1,
+          w: 7,
+          h: 5,
+          roof: "#443f58",
+          body: "#ece7f4",
+          trainerId: "umbra-boss"
+        });
+        add({
+          id: "league-crown",
+          kind: "league",
+          cityId: city.id,
+          name: "League Desk",
+          label: "LEAGUE",
+          x: city.x + 13,
+          y: city.y + 7,
+          w: 4,
+          h: 4,
+          roof: "#7567d9",
+          body: "#f3f1fb"
+        });
+      }
+
+      const gym = GYM_DEFS.find((entry) => entry.cityId === city.id);
+      if (gym) {
+        add({
+          id: gym.trainerId,
+          kind: "gym",
+          cityId: city.id,
+          name: `${gym.type} Gym`,
+          label: "GYM",
+          x: city.x + city.w - 6,
+          y: city.y + 1,
+          w: 5,
+          h: 4,
+          roof: gym.roof,
+          body: "#f7f0e8",
+          trainerId: gym.trainerId,
+          badge: gym.badge
+        });
+      }
+    });
+
+    return buildings;
+  }
+
+  function createRegionNpcs() {
+    const npcs = [
+      { id: "nurse-lumen", name: "Nurse Luma", x: 9, y: 10, color: "#ef704b", action: "heal", sprite: "nurse" },
+      { id: "professor", name: "Professor Maple", x: 15, y: 11, color: "#5bb9d6", action: "gift", sprite: "professor" },
+      { id: "scout", name: "Scout Ren", x: 22, y: 10, color: "#7fbf5f", action: "trainer", trainerId: "scout", sprite: "scout" },
+      { id: "rival-lumen", name: "Rival Jules", x: 20, y: 10, color: "#f1c84b", action: "trainer", trainerId: "rival-lumen", sprite: "rival" },
+      { id: "rival-quarry", name: "Rival Jules", x: 53, y: 15, color: "#f1c84b", action: "trainer", trainerId: "rival-quarry", sprite: "rival" },
+      { id: "rival-astral", name: "Rival Jules", x: 39, y: 32, color: "#f1c84b", action: "trainer", trainerId: "rival-astral", sprite: "rival" },
+      { id: "rival-crown", name: "Rival Jules", x: 66, y: 62, color: "#f1c84b", action: "trainer", trainerId: "rival-crown", sprite: "rival" },
+      { id: "umbra-bracken", name: "Umbra Grunt Pax", x: 45, y: 10, color: "#443f58", action: "trainer", trainerId: "umbra-bracken", sprite: "umbra" },
+      { id: "umbra-quarry", name: "Umbra Grunt Voss", x: 70, y: 12, color: "#443f58", action: "trainer", trainerId: "umbra-quarry", sprite: "umbra" },
+      { id: "umbra-admin", name: "Admin Nyx", x: 56, y: 33, color: "#594678", action: "trainer", trainerId: "umbra-admin", sprite: "umbraAdmin" },
+      { id: "umbra-boss", name: "Director Vey", x: 76, y: 62, color: "#272236", action: "trainer", trainerId: "umbra-boss", sprite: "umbraBoss" },
+      { id: "captain", name: "Captain Mira", x: 83, y: 24, color: "#3398c8", action: "talk", sprite: "captain", text: "Umbra boats keep cutting their lights near Saltwind Coast. Win badges, then make them answer for it." },
+      { id: "mechanic", name: "Mechanic Ivo", x: 30, y: 56, color: "#d5b125", action: "talk", sprite: "worker", text: "Neon Heights runs on gym power. Every badge you earn brings another district back online." },
+      { id: "archivist", name: "Archivist Rue", x: 47, y: 34, color: "#dc5c94", action: "talk", sprite: "scholar", text: "The Astral charts mention a Crown antenna. Team Umbra did not pick that target at random." },
+      { id: "elder", name: "Elder Pavo", x: 12, y: 44, color: "#8e55b7", action: "talk", sprite: "elder", text: "Thornmere's old roads hide rare partners after dusk. The brave come back with stories." }
+    ];
+
+    GYM_DEFS.forEach((gym) => {
+      const building = BUILDINGS.find((entry) => entry.trainerId === gym.trainerId);
+      if (!building) return;
+      npcs.push({
+        id: `${gym.trainerId}-leader`,
+        name: gym.leader,
+        x: building.doorX,
+        y: building.y + building.h,
+        color: gym.roof,
+        action: "trainer",
+        trainerId: gym.trainerId,
+        sprite: "leader"
+      });
+    });
+
+    CITY_DEFS.forEach((city, index) => {
+      npcs.push({
+        id: `guide-${city.id}`,
+        name: `${city.name.split(" ")[0]} Guide`,
+        x: city.x + Math.floor(city.w / 2),
+        y: city.y + city.h - 2,
+        color: index % 2 ? "#5bb9d6" : "#7fbf5f",
+        action: "talk",
+        sprite: "guide",
+        text: `${city.name} is stop ${index + 1} on the Grand Circuit. Roads loop wide, so check your map name in the top bar.`
+      });
+    });
+
+    return npcs;
+  }
 
   const ENCOUNTERS = {
     meadow: [
@@ -382,8 +831,8 @@
       name: "PokeG Ember Red",
       shortName: "Ember Red",
       cardTitle: "Ember Red",
-      cardText: "A hotter, Kanto-inspired route set with rocky cuts, bold rivals, and classic partners.",
-      cardTags: ["classic", "fire", "rock"],
+      cardText: "A grand circuit with ten cities, eight gyms, Team Umbra, and classic partners.",
+      cardTags: ["grand", "fire", "circuit"],
       starters: STARTERS,
       professor: "Professor Maple",
       starterHeadline: "Choose your Ember partner",
@@ -394,7 +843,7 @@
       giftLog: "Professor Maple pointed toward the coast.",
       giftReceived: "Received 6 Poke Balls, 2 Potions, and $120.",
       routeNames: {
-        town: "Maple Town",
+        town: "Lumen Village",
         gym: "Aster Gym Gate",
         coast: "Copperwash Coast",
         granite: "Granite Cut",
@@ -436,15 +885,15 @@
       },
       trainers: TRAINERS,
       encounters: ENCOUNTERS,
-      badgeText: "Aster opens the longer routes, and your dex signal now marks rare encounters more clearly."
+      badgeText: "The next city on the Grand Circuit is open, and Team Umbra's signal gets easier to trace."
     },
     sapphire: {
       id: "sapphire",
       name: "PokeG Sapphire Tide",
       shortName: "Sapphire Tide",
       cardTitle: "Sapphire Tide",
-      cardText: "A wetter, Hoenn-inspired route set with tidal grass, cave steel, and new Gen III partners.",
-      cardTags: ["coastal", "water", "gen iii"],
+      cardText: "A coastal grand circuit with ten cities, eight gyms, Team Umbra, and Gen III partners.",
+      cardTags: ["coastal", "water", "circuit"],
       starters: [252, 255, 258, 280],
       professor: "Professor Coral",
       starterHeadline: "Choose your Tide partner",
@@ -455,7 +904,7 @@
       giftLog: "Professor Coral marked a shoal signal on your dex.",
       giftReceived: "Received 8 Net Balls, 2 Potions, and $140.",
       routeNames: {
-        town: "Coralroot Town",
+        town: "Lumen Village",
         gym: "Marina Gym Pier",
         coast: "Sapphire Shoals",
         granite: "Slatebreak Cave",
@@ -518,7 +967,7 @@
         }
       },
       encounters: SAPPHIRE_ENCOUNTERS,
-      badgeText: "Marina clears the shoal gates, and rare coastal encounters begin pulsing on your dex."
+      badgeText: "The next city on the Grand Circuit is open, and rare coastal encounters begin pulsing on your dex."
     }
   };
 
@@ -526,6 +975,12 @@
   let activeTab = "party";
   let state = freshState();
   let camera = { x: 0, y: 0 };
+  let playerMotion = null;
+  let trainerApproach = null;
+  let currentInterior = null;
+  let introStep = 0;
+  let battleFxTimer = 0;
+  const footstepEffects = [];
   let lastMoveAt = 0;
   let toastTimer = 0;
   let audioContext = null;
@@ -533,10 +988,10 @@
   function freshState(editionId = null) {
     const selectedEdition = editionId && EDITIONS[editionId] ? editionId : null;
     return {
-      version: 2,
+      version: 3,
       edition: selectedEdition,
       trainer: { name: "Rookie" },
-      player: { x: 16, y: 12, dir: "down", steps: 0 },
+      player: { x: 12, y: 12, dir: "down", steps: 0 },
       party: [],
       pc: [],
       activeIndex: 0,
@@ -545,7 +1000,7 @@
       badges: [],
       dexSeen: [],
       dexCaught: [],
-      flags: { mapleGift: false, trainers: {} },
+      flags: { mapleGift: false, trainers: {}, story: {} },
       log: [],
       battle: null,
       dialog: null,
@@ -558,13 +1013,14 @@
     const selectedEdition = save.edition && EDITIONS[save.edition] ? save.edition : "ember";
     const base = freshState(selectedEdition);
     const merged = { ...base, ...save };
-    merged.version = 2;
+    merged.version = 3;
     merged.edition = selectedEdition;
     merged.trainer = { ...base.trainer, ...(save.trainer || {}) };
     merged.player = { ...base.player, ...(save.player || {}) };
     merged.bag = { ...base.bag, ...(save.bag || {}) };
     merged.flags = { ...base.flags, ...(save.flags || {}) };
     merged.flags.trainers = { ...(save.flags && save.flags.trainers ? save.flags.trainers : {}) };
+    merged.flags.story = { ...(save.flags && save.flags.story ? save.flags.story : {}) };
     merged.party = Array.isArray(save.party) ? save.party.map(revivePokemon).filter(Boolean) : [];
     merged.pc = Array.isArray(save.pc) ? save.pc.map(revivePokemon).filter(Boolean) : [];
     merged.dexSeen = uniqueNumbers(save.dexSeen || []);
@@ -603,14 +1059,21 @@
     const saved = loadGame();
     if (saved && saved.party.length) {
       state = saved;
+      ensurePlayerInUnlockedArea();
       applyEditionTheme();
       els.editionModal.hidden = true;
+      els.introModal.hidden = true;
       els.starterModal.hidden = true;
+      els.mapModal.hidden = true;
+      els.interiorModal.hidden = true;
       showToast("Save loaded.");
     } else {
       applyEditionTheme("ember");
       els.editionModal.hidden = false;
+      els.introModal.hidden = true;
       els.starterModal.hidden = true;
+      els.mapModal.hidden = true;
+      els.interiorModal.hidden = true;
     }
     syncAudioButton();
     renderAll();
@@ -626,6 +1089,15 @@
       console.warn("Could not load save", error);
       return null;
     }
+  }
+
+  function ensurePlayerInUnlockedArea() {
+    const lock = lockedCityAt(state.player.x, state.player.y);
+    if (!lock) return;
+    state.player.x = 12;
+    state.player.y = 12;
+    state.player.dir = "down";
+    pushLog(`Returned to Lumen Village while ${lock.city.name} is gated.`);
   }
 
   function saveGame(manual = false) {
@@ -668,20 +1140,42 @@
     root.style.setProperty("--battle-sky", edition.world.battleSky);
     root.style.setProperty("--battle-ground", edition.world.battleGround);
     document.body.dataset.gameEdition = edition.id;
-    document.title = `${edition.name} - Versioned Routes`;
+    document.title = `${edition.name} - Grand Circuit`;
   }
 
   function editionTrainer(trainerId) {
-    return getEdition().trainers[trainerId];
+    const edition = getEdition();
+    const trainer = edition.trainers[trainerId] || TRAINERS[trainerId];
+    if (!trainer) return null;
+    if (trainer.name === "Rival Jules") return { ...trainer, name: edition.npcs.rival.name };
+    return trainer;
   }
 
   function editionNpcs() {
     const edition = getEdition();
-    return NPCS.map((npc) => ({ ...npc, ...(edition.npcs[npc.id] || {}) }));
+    return NPCS.map((npc) => {
+      const themed = { ...npc, ...(edition.npcs[npc.id] || {}) };
+      if (npc.id === "professor") themed.name = edition.professor;
+      if (npc.id.startsWith("rival-")) themed.name = edition.npcs.rival.name;
+      return themed;
+    });
   }
 
   function worldPalette() {
     return getEdition().world;
+  }
+
+  function cityById(id) {
+    return CITY_DEFS.find((city) => city.id === id);
+  }
+
+  function cityName(id) {
+    const city = cityById(id);
+    return city ? city.name : "the circuit";
+  }
+
+  function nextGymChallenge() {
+    return GYM_DEFS.find((gym) => !state.badges.includes(gym.badge));
   }
 
   function cleanPokemonForSave(pokemon) {
@@ -700,29 +1194,36 @@
 
   function renderTopline() {
     const edition = getEdition();
-    els.gameTitle.textContent = state.edition ? edition.name : "PokeG v2";
+    els.gameTitle.textContent = state.edition ? edition.name : "PokeG v3";
     els.trainerName.textContent = state.trainer.name;
     els.routeName.textContent = state.edition ? currentRouteName() : "Choose your edition";
-    els.badgeCount.textContent = state.badges.length;
+    els.badgeCount.textContent = `${state.badges.length}/${GYM_DEFS.length}`;
     els.moneyCount.textContent = `$${state.money}`;
     els.seenCount.textContent = state.dexSeen.length;
-    els.editionName.textContent = state.edition ? edition.shortName : "v2";
+    els.editionName.textContent = state.edition ? edition.shortName : "v3";
   }
 
   function renderQuest() {
     const edition = getEdition();
     let text = state.edition ? "Choose a starter" : "Choose a version";
-    if (state.party.length) text = `Talk with ${edition.professor}`;
-    if (state.flags.mapleGift) text = "Train in the tall grass";
-    if (state.flags.trainers.scout) text = `Find ${edition.npcs.rival.name}`;
-    if (state.flags.trainers.rival) text = `Challenge ${edition.leaderName}`;
-    if (state.badges.includes(edition.leaderBadge)) text = `${edition.leaderBadge} secured`;
+    if (state.party.length) text = `Talk with ${edition.professor} in Lumen Village`;
+    if (state.flags.mapleGift) text = "Battle Jules on Sunpetal Route";
+    if (state.flags.trainers["rival-lumen"]) {
+      const gym = nextGymChallenge();
+      text = gym ? `Earn the ${gym.badge} in ${cityName(gym.cityId)}` : "Investigate Crown Station";
+    }
+    if (state.badges.length >= 1 && !state.flags.trainers["umbra-bracken"]) text = "Stop Team Umbra near Bracken City";
+    if (state.badges.length >= 5 && !state.flags.trainers["umbra-admin"]) text = "Follow Team Umbra to Astral City";
+    if (state.badges.length >= 8 && !state.flags.trainers["umbra-boss"]) text = "Shut down Team Umbra in Crown City";
+    if (state.flags.trainers["umbra-boss"] && !state.flags.trainers["rival-crown"]) text = "Meet Jules at Crown Gate";
+    if (state.flags.trainers["rival-crown"]) text = "The Crown League desk is open";
     els.questText.textContent = text;
   }
 
   function renderSidePanels() {
     renderParty();
     renderBag();
+    renderMapPanel();
     renderDex();
     renderEventLog();
     document.querySelectorAll(".tab").forEach((tab) => {
@@ -733,6 +1234,67 @@
     document.querySelectorAll(".panel-view").forEach((panel) => panel.classList.remove("is-active"));
     const panel = document.getElementById(`${activeTab}Panel`);
     if (panel) panel.classList.add("is-active");
+  }
+
+  function renderMapPanel() {
+    els.mapPanel.innerHTML = `
+      <div class="map-panel-head">
+        <strong>${currentRouteName()}</strong>
+        <button type="button" class="party-action" data-open-map>Open</button>
+      </div>
+      ${regionMapHtml(true)}
+    `;
+  }
+
+  function regionMapHtml(compact = false) {
+    const current = cityAt(state.player.x, state.player.y);
+    const roads = ROAD_SEGMENTS.map((segment) => {
+      const x1 = (segment.x1 / WORLD.width) * 100;
+      const y1 = (segment.y1 / WORLD.height) * 100;
+      const x2 = (segment.x2 / WORLD.width) * 100;
+      const y2 = (segment.y2 / WORLD.height) * 100;
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+    }).join("");
+    const cities = CITY_DEFS.map((city) => {
+      const gym = GYM_DEFS.find((entry) => entry.cityId === city.id);
+      const done = gym ? state.badges.includes(gym.badge) : city.role === "home" || city.role === "league";
+      const active = current && current.id === city.id;
+      const locked = isCityLocked(city.id);
+      const left = ((city.x + city.w / 2) / WORLD.width) * 100;
+      const top = ((city.y + city.h / 2) / WORLD.height) * 100;
+      return `
+        <span class="map-city ${done ? "is-done" : ""} ${active ? "is-current" : ""} ${locked ? "is-locked" : ""}" style="left:${left}%;top:${top}%">
+          <i>${gym ? gym.rank : city.role === "league" ? "L" : "H"}</i>
+          <b>${compact ? city.name.split(" ")[0] : city.name}</b>
+        </span>
+      `;
+    }).join("");
+    const gates = GATE_DEFS.map((gate) => {
+      const open = isGateOpen(gate);
+      const left = ((gate.x + gate.w / 2) / WORLD.width) * 100;
+      const top = ((gate.y + gate.h / 2) / WORLD.height) * 100;
+      return `<span class="map-gate ${open ? "is-open" : ""}" style="left:${left}%;top:${top}%" title="${escapeHtml(gate.title)}"></span>`;
+    }).join("");
+    const playerLeft = ((state.player.x + 0.5) / WORLD.width) * 100;
+    const playerTop = ((state.player.y + 0.5) / WORLD.height) * 100;
+    return `
+      <div class="region-map ${compact ? "is-compact" : ""}">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${roads}</svg>
+        ${cities}
+        ${gates}
+        <span class="map-player" style="left:${playerLeft}%;top:${playerTop}%"></span>
+      </div>
+    `;
+  }
+
+  function showRegionMap() {
+    if (!state.party.length) {
+      showToast("Choose a partner first.");
+      return;
+    }
+    els.regionMapModal.innerHTML = regionMapHtml(false);
+    els.mapModal.hidden = false;
+    tone(494, 0.06, "triangle");
   }
 
   function renderParty() {
@@ -824,15 +1386,78 @@
   }
 
   function renderEventLog() {
-    if (!state.log.length) {
-      els.logPanel.innerHTML = `<div class="empty-state">No field notes yet.</div>`;
-      return;
-    }
+    const objectives = activeObjectives().map((entry) => `
+      <div class="objective-row ${entry.done ? "is-done" : ""}">
+        <strong>${entry.title}</strong>
+        <span>${entry.text}</span>
+      </div>
+    `).join("");
+    const gymRows = GYM_DEFS.map((gym) => {
+      const done = state.badges.includes(gym.badge);
+      return `<span class="${done ? "is-done" : ""}">${gym.rank}. ${gym.badge}</span>`;
+    }).join("");
+    const umbraRows = [
+      ["Bracken crate", "umbra-bracken"],
+      ["Quarry cable", "umbra-quarry"],
+      ["Astral chart", "umbra-admin"],
+      ["Crown antenna", "umbra-boss"]
+    ].map(([label, key]) => `<span class="${state.flags.trainers[key] ? "is-done" : ""}">${label}</span>`).join("");
     els.logPanel.innerHTML = `
+      <div class="objective-list">
+        ${objectives}
+      </div>
+      <div class="story-board">
+        <strong>Gym Circuit</strong>
+        <div>${gymRows}</div>
+        <strong>Team Umbra</strong>
+        <div>${umbraRows}</div>
+      </div>
       <div class="event-log">
-        ${state.log.slice(0, 24).map((entry) => `<div class="log-row"><span>${escapeHtml(entry)}</span></div>`).join("")}
+        ${state.log.length ? state.log.slice(0, 24).map((entry) => `<div class="log-row"><span>${escapeHtml(entry)}</span></div>`).join("") : `<div class="empty-state">No field notes yet.</div>`}
       </div>
     `;
+  }
+
+  function activeObjectives() {
+    const nextGym = nextGymChallenge();
+    return [
+      {
+        title: state.flags.mapleGift ? "Field Kit Secured" : "Visit The Professor",
+        text: state.flags.mapleGift ? "Professor supplies are packed for the road." : `Talk to ${getEdition().professor} in Lumen Village.`,
+        done: !!state.flags.mapleGift
+      },
+      {
+        title: nextGym ? `Next Gym: ${nextGym.badge}` : "Gym Circuit Complete",
+        text: nextGym ? `Challenge ${nextGym.leader} in ${cityName(nextGym.cityId)}.` : "All eight badges are registered.",
+        done: !nextGym
+      },
+      {
+        title: state.flags.trainers["umbra-boss"] ? "Team Umbra Defeated" : "Team Umbra Investigation",
+        text: nextUmbraObjective(),
+        done: !!state.flags.trainers["umbra-boss"]
+      },
+      {
+        title: state.flags.trainers["rival-crown"] ? "Rival Gate Battle Won" : "Rival Arc",
+        text: nextRivalObjective(),
+        done: !!state.flags.trainers["rival-crown"]
+      }
+    ];
+  }
+
+  function nextUmbraObjective() {
+    if (!state.flags.trainers["umbra-bracken"]) return "Stop the black-crate roadblock east of Bracken after the first badge.";
+    if (!state.flags.trainers["umbra-quarry"]) return "Clear Umbra's cable theft near Quarry Town.";
+    if (!state.flags.trainers["umbra-admin"]) return "Follow Admin Nyx to Astral City's observatory road.";
+    if (!state.flags.trainers["umbra-boss"]) return "Confront Director Vey at Crown Station after eight badges.";
+    return "Crown Station lights are restored.";
+  }
+
+  function nextRivalObjective() {
+    if (!state.flags.trainers["rival-lumen"]) return "Battle Jules on Sunpetal Route.";
+    if (!state.flags.trainers["rival-quarry"]) return "Meet Jules by Quarry Town after two badges.";
+    if (!state.flags.trainers["rival-astral"]) return "Meet Jules under Astral City's observatory lights.";
+    if (!state.flags.trainers["rival-crown"]) return "Find Jules at Crown Gate after the Umbra finale.";
+    return "Jules is ready for the league chapter.";
   }
 
   function renderDialog() {
@@ -867,7 +1492,7 @@
   }
 
   function toggleMenu(force = null) {
-    if (!state.party.length || state.battle || !els.editionModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || state.dialog) return;
+    if (!state.party.length || state.battle || !els.editionModal.hidden || !els.introModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || !els.mapModal.hidden || !els.interiorModal.hidden || state.dialog) return;
     state.menuOpen = force === null ? !state.menuOpen : Boolean(force);
     renderPauseMenu();
     tone(state.menuOpen ? 523 : 392, 0.045, "triangle");
@@ -877,8 +1502,8 @@
     els.editionGrid.innerHTML = Object.values(EDITIONS).map((edition) => `
       <button class="edition-card" type="button" data-edition="${edition.id}">
         <div class="version-scene" aria-hidden="true">
-          <span class="scene-token">${edition.id === "ember" ? "FR" : "SA"}</span>
-          <span class="scene-token">${edition.id === "ember" ? "01" : "03"}</span>
+          <span class="scene-token">${edition.id === "ember" ? "ER" : "ST"}</span>
+          <span class="scene-token">10</span>
         </div>
         <div>
           <strong>${edition.cardTitle}</strong>
@@ -915,11 +1540,36 @@
     applyEditionTheme();
     renderStarters();
     els.editionModal.hidden = true;
-    els.starterModal.hidden = false;
+    els.introModal.hidden = false;
+    els.starterModal.hidden = true;
+    introStep = 0;
+    renderIntro();
     showToast(`${getEdition().shortName} selected.`);
     renderAll();
     tone(392, 0.07, "triangle");
     tone(659, 0.09, "triangle", 0.07);
+  }
+
+  function renderIntro() {
+    const step = INTRO_STEPS[introStep] || INTRO_STEPS[0];
+    els.introKicker.textContent = step.kicker === "Professor" ? getEdition().professor : step.kicker;
+    els.introTitle.textContent = step.title;
+    els.introText.textContent = step.text;
+    els.introScene.dataset.scene = step.scene;
+    els.introNextButton.textContent = introStep >= INTRO_STEPS.length - 1 ? "Choose partner" : "Next";
+  }
+
+  function advanceIntro(skip = false) {
+    if (skip || introStep >= INTRO_STEPS.length - 1) {
+      els.introModal.hidden = true;
+      els.starterModal.hidden = false;
+      tone(523, 0.07, "triangle");
+      renderAll();
+      return;
+    }
+    introStep += 1;
+    renderIntro();
+    tone(440 + introStep * 80, 0.045, "triangle");
   }
 
   function startGame(starterId) {
@@ -934,6 +1584,7 @@
     pushLog(`${starter.name} joined your party.`);
     pushLog(`${getEdition().shortName} journey started.`);
     els.editionModal.hidden = true;
+    els.introModal.hidden = true;
     els.starterModal.hidden = true;
     showToast(`${starter.name} joined your party.`);
     saveGame(false);
@@ -943,7 +1594,8 @@
   }
 
   function drawWorld(time = 0) {
-    updateCamera();
+    settlePlayerMotion(time);
+    updateCamera(time);
     ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
     ctx.fillStyle = "#111814";
     ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
@@ -956,10 +1608,14 @@
         drawTile(x, y, tileAt(x, y), time);
       }
     }
+    drawRegionDetails(time);
+    drawLandmarks(time);
+    drawGates(time);
+    drawFootstepEffects(time);
     drawBuildings();
     const actors = [
       ...editionNpcs().map((npc) => ({ kind: "npc", y: npc.y, actor: npc })),
-      { kind: "player", y: state.player.y, actor: state.player }
+      { kind: "player", y: playerDisplayPosition(time).y, actor: state.player }
     ].sort((a, b) => a.y - b.y);
     actors.forEach((entry) => {
       if (entry.kind === "npc") drawNpc(entry.actor, time);
@@ -968,11 +1624,29 @@
     requestAnimationFrame(drawWorld);
   }
 
-  function updateCamera() {
-    const targetX = state.player.x * WORLD.tile + WORLD.tile / 2 - els.canvas.width / 2;
-    const targetY = state.player.y * WORLD.tile + WORLD.tile / 2 - els.canvas.height / 2;
+  function updateCamera(time = performance.now()) {
+    const player = playerDisplayPosition(time);
+    const targetX = player.x * WORLD.tile + WORLD.tile / 2 - els.canvas.width / 2;
+    const targetY = player.y * WORLD.tile + WORLD.tile / 2 - els.canvas.height / 2;
     camera.x = clamp(targetX, 0, Math.max(0, WORLD.width * WORLD.tile - els.canvas.width));
     camera.y = clamp(targetY, 0, Math.max(0, WORLD.height * WORLD.tile - els.canvas.height));
+  }
+
+  function settlePlayerMotion(time) {
+    if (!playerMotion || time - playerMotion.started < playerMotion.duration) return;
+    playerMotion = null;
+    if (checkTrainerVision(time)) return;
+    maybeWildEncounter();
+  }
+
+  function playerDisplayPosition(time = performance.now()) {
+    if (!playerMotion) return { x: state.player.x, y: state.player.y };
+    const t = clamp((time - playerMotion.started) / playerMotion.duration, 0, 1);
+    const eased = t * t * (3 - 2 * t);
+    return {
+      x: playerMotion.fromX + (playerMotion.toX - playerMotion.fromX) * eased,
+      y: playerMotion.fromY + (playerMotion.toY - playerMotion.fromY) * eased
+    };
   }
 
   function drawTile(x, y, tile, time) {
@@ -985,6 +1659,7 @@
       meadow: h % 3 === 0 ? palette.meadow[0] : palette.meadow[1],
       tallgrass: h % 2 === 0 ? palette.tallgrass[0] : palette.tallgrass[1],
       path: h % 2 === 0 ? palette.path[0] : palette.path[1],
+      city: cityAt(x, y) ? cityAt(x, y).color : "#d8c99d",
       water: palette.water,
       tree: palette.tree[0],
       rock: palette.rock
@@ -996,6 +1671,19 @@
       ctx.fillStyle = "rgba(255,255,255,0.13)";
       ctx.fillRect(px + 6, py + 12, 6, 4);
       ctx.fillRect(px + 20, py + 22, 7, 3);
+    }
+
+    if (baseTile === "city") {
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.fillRect(px + 2, py + 2, 28, 1);
+      ctx.fillRect(px + 2, py + 16, 28, 1);
+      ctx.fillStyle = "rgba(23,33,29,0.08)";
+      ctx.fillRect(px + 15, py, 1, 32);
+      ctx.fillRect(px, py + 15, 32, 1);
+      if (h % 9 === 0) {
+        ctx.fillStyle = "rgba(255,253,246,0.58)";
+        ctx.fillRect(px + 7, py + 7, 4, 4);
+      }
     }
 
     if (baseTile === "tallgrass") {
@@ -1042,6 +1730,151 @@
     }
   }
 
+  function drawRegionDetails(time) {
+    CITY_DEFS.forEach((city) => {
+      const x = city.x * WORLD.tile - camera.x;
+      const y = city.y * WORLD.tile - camera.y;
+      const w = city.w * WORLD.tile;
+      const h = city.h * WORLD.tile;
+      if (x > els.canvas.width || y > els.canvas.height || x + w < 0 || y + h < 0) return;
+
+      ctx.fillStyle = "rgba(23,33,29,0.12)";
+      ctx.fillRect(x, y, w, 4);
+      ctx.fillRect(x, y + h - 4, w, 4);
+      ctx.fillRect(x, y, 4, h);
+      ctx.fillRect(x + w - 4, y, 4, h);
+
+      const signX = x + w / 2 - 74;
+      const signY = y + h - 26;
+      ctx.fillStyle = "rgba(23,33,29,0.72)";
+      ctx.fillRect(signX, signY, 148, 18);
+      ctx.fillStyle = "#fffdf6";
+      ctx.font = "900 10px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(city.name.toUpperCase(), x + w / 2, signY + 13);
+
+      const lampPulse = 0.5 + Math.sin(time / 480 + city.x) * 0.18;
+      ctx.fillStyle = `rgba(255,235,150,${lampPulse})`;
+      [[city.x + 2, city.y + city.h - 2], [city.x + city.w - 3, city.y + 2]].forEach(([lx, ly]) => {
+        const px = lx * WORLD.tile - camera.x;
+        const py = ly * WORLD.tile - camera.y;
+        ctx.fillRect(px + 14, py + 6, 4, 12);
+        ctx.fillRect(px + 10, py + 4, 12, 5);
+      });
+    });
+
+    WILD_ZONES.forEach((zone) => {
+      const x = zone.x * WORLD.tile - camera.x;
+      const y = zone.y * WORLD.tile - camera.y;
+      const w = zone.w * WORLD.tile;
+      const h = zone.h * WORLD.tile;
+      if (x > els.canvas.width || y > els.canvas.height || x + w < 0 || y + h < 0) return;
+
+      ctx.fillStyle = "rgba(23,33,29,0.45)";
+      ctx.fillRect(x + 6, y + 6, 4, 22);
+      ctx.fillRect(x + 14, y + 10, 70, 16);
+      ctx.fillStyle = "#fffdf6";
+      ctx.font = "800 9px system-ui";
+      ctx.textAlign = "left";
+      ctx.fillText(zone.name.toUpperCase(), x + 18, y + 22);
+    });
+  }
+
+  function drawLandmarks(time) {
+    LANDMARKS.forEach((landmark) => {
+      const px = landmark.x * WORLD.tile - camera.x;
+      const py = landmark.y * WORLD.tile - camera.y;
+      if (px < -80 || py < -80 || px > els.canvas.width + 80 || py > els.canvas.height + 80) return;
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.beginPath();
+      ctx.ellipse(px + 16, py + 28, 17, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = landmark.color;
+      ctx.strokeStyle = "#18231f";
+      ctx.lineWidth = 3;
+
+      if (landmark.kind === "lighthouse") {
+        ctx.fillRect(px + 10, py + 4, 12, 25);
+        ctx.strokeRect(px + 10, py + 4, 12, 25);
+        ctx.fillStyle = `rgba(255,245,170,${0.55 + Math.sin(time / 350) * 0.22})`;
+        ctx.fillRect(px + 6, py + 2, 20, 6);
+      } else if (landmark.kind === "antenna" || landmark.kind === "power-tower") {
+        ctx.beginPath();
+        ctx.moveTo(px + 16, py + 3);
+        ctx.lineTo(px + 7, py + 29);
+        ctx.lineTo(px + 25, py + 29);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = `rgba(241,200,75,${0.45 + Math.sin(time / 180) * 0.25})`;
+        ctx.fillRect(px + 13, py, 6, 6);
+      } else if (landmark.kind === "observatory") {
+        ctx.beginPath();
+        ctx.arc(px + 16, py + 16, 13, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillRect(px + 7, py + 16, 18, 12);
+      } else if (landmark.kind === "mist-well") {
+        ctx.beginPath();
+        ctx.arc(px + 16, py + 20, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255,255,255,${0.25 + Math.sin(time / 300) * 0.12})`;
+        ctx.fillRect(px + 4, py + 8, 24, 5);
+      } else if (landmark.kind === "crane") {
+        ctx.fillRect(px + 7, py + 5, 5, 25);
+        ctx.fillRect(px + 9, py + 5, 22, 5);
+        ctx.strokeRect(px + 7, py + 5, 5, 25);
+        ctx.strokeRect(px + 9, py + 5, 22, 5);
+      } else {
+        ctx.fillRect(px + 7, py + 13, 18, 16);
+        ctx.strokeRect(px + 7, py + 13, 18, 16);
+        ctx.beginPath();
+        ctx.arc(px + 16, py + 11, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    });
+  }
+
+  function drawGates(time) {
+    GATE_DEFS.forEach((gate) => {
+      const open = isGateOpen(gate);
+      const x = gate.x * WORLD.tile - camera.x;
+      const y = gate.y * WORLD.tile - camera.y;
+      const w = gate.w * WORLD.tile;
+      const h = gate.h * WORLD.tile;
+      if (x > els.canvas.width || y > els.canvas.height || x + w < 0 || y + h < 0) return;
+      ctx.fillStyle = open ? "rgba(63, 141, 83, 0.28)" : "rgba(207, 77, 77, 0.54)";
+      ctx.fillRect(x + 4, y + 6, w - 8, h - 12);
+      ctx.strokeStyle = "#18231f";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x + 4, y + 6, w - 8, h - 12);
+      ctx.fillStyle = open ? "#fffdf6" : "#18231f";
+      ctx.font = "900 10px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(open ? "OPEN" : "GATE", x + w / 2, y + h / 2 + 4 + Math.sin(time / 300));
+    });
+  }
+
+  function drawFootstepEffects(time) {
+    for (let i = footstepEffects.length - 1; i >= 0; i -= 1) {
+      const effect = footstepEffects[i];
+      const age = time - effect.time;
+      if (age > 420) {
+        footstepEffects.splice(i, 1);
+        continue;
+      }
+      const t = age / 420;
+      const px = effect.x * WORLD.tile - camera.x;
+      const py = effect.y * WORLD.tile - camera.y;
+      ctx.fillStyle = `rgba(255,253,246,${0.34 * (1 - t)})`;
+      ctx.beginPath();
+      ctx.arc(px + 16, py + 27 - t * 8, 4 + t * 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
   function drawBuildings() {
     const edition = getEdition();
     BUILDINGS.forEach((building) => {
@@ -1049,75 +1882,184 @@
       const y = building.y * WORLD.tile - camera.y;
       const w = building.w * WORLD.tile;
       const h = building.h * WORLD.tile;
+      if (x > els.canvas.width + 40 || y > els.canvas.height + 40 || x + w < -40 || y + h < -40) return;
       ctx.fillStyle = "rgba(0,0,0,0.18)";
       ctx.fillRect(x + 5, y + h - 4, w, 8);
       ctx.fillStyle = building.body;
       ctx.fillRect(x + 8, y + 24, w - 16, h - 24);
-      ctx.fillStyle = edition.buildingRoofs[building.id] || building.roof;
+      ctx.fillStyle = edition.buildingRoofs[building.kind] || building.roof;
       ctx.fillRect(x, y + 8, w, 34);
       ctx.fillStyle = "rgba(0,0,0,0.2)";
       ctx.fillRect(x, y + 38, w, 5);
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(x + 10, y + 14, w - 20, 5);
       ctx.fillStyle = "#513b2d";
       ctx.fillRect(building.doorX * WORLD.tile - camera.x + 6, y + h - 34, 20, 34);
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.fillRect(building.doorX * WORLD.tile - camera.x + 22, y + h - 18, 2, 3);
       ctx.fillStyle = "#ffe9a7";
       ctx.fillRect(x + 18, y + 50, 18, 14);
       ctx.fillRect(x + w - 36, y + 50, 18, 14);
       ctx.fillStyle = "#fffdf6";
       ctx.font = "900 11px system-ui";
       ctx.textAlign = "center";
-      ctx.fillText(building.name.toUpperCase(), x + w / 2, y + 29);
+      ctx.fillText((building.label || building.name).toUpperCase(), x + w / 2, y + 29);
     });
   }
 
   function drawNpc(npc, time) {
-    const px = npc.x * WORLD.tile - camera.x;
-    const py = npc.y * WORLD.tile - camera.y;
-    const bob = Math.sin(time / 340 + npc.x) * 1.5;
-    ctx.fillStyle = "rgba(0,0,0,0.16)";
-    ctx.beginPath();
-    ctx.ellipse(px + 16, py + 27, 11, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#f3c69f";
-    ctx.fillRect(px + 10, py + 5 + bob, 12, 10);
-    ctx.fillStyle = npc.color;
-    ctx.fillRect(px + 8, py + 14 + bob, 16, 13);
-    ctx.fillStyle = "#26322c";
-    ctx.fillRect(px + 9, py + 27 + bob, 5, 5);
-    ctx.fillRect(px + 18, py + 27 + bob, 5, 5);
-    ctx.fillStyle = "#fffdf6";
-    ctx.fillRect(px + 13, py + 8 + bob, 3, 2);
+    const pos = npcDisplayPosition(npc, time);
+    const px = pos.x * WORLD.tile - camera.x;
+    const py = pos.y * WORLD.tile - camera.y;
+    drawTrainerSprite(px, py, trainerSpriteProfile(npc), "down", time, false);
+    if (npc.action === "trainer" && !state.flags.trainers[npc.trainerId]) {
+      drawAlertBubble(px, py, time, npc.trainerId && npc.trainerId.startsWith("umbra") ? "!" : "*");
+    }
+  }
+
+  function npcDisplayPosition(npc, time) {
+    if (!trainerApproach || trainerApproach.npcId !== npc.id) return { x: npc.x, y: npc.y };
+    const t = clamp((time - trainerApproach.started) / trainerApproach.duration, 0, 1);
+    const eased = t * t * (3 - 2 * t);
+    return {
+      x: trainerApproach.fromX + (trainerApproach.toX - trainerApproach.fromX) * eased,
+      y: trainerApproach.fromY + (trainerApproach.toY - trainerApproach.fromY) * eased
+    };
   }
 
   function drawPlayer(player, time) {
-    const px = player.x * WORLD.tile - camera.x;
-    const py = player.y * WORLD.tile - camera.y;
-    const moving = keysDown.size && !isLocked();
-    const bob = moving ? Math.sin(time / 80) * 2 : Math.sin(time / 420) * 1;
-    ctx.fillStyle = "rgba(0,0,0,0.18)";
+    const pos = playerDisplayPosition(time);
+    const px = pos.x * WORLD.tile - camera.x;
+    const py = pos.y * WORLD.tile - camera.y;
+    drawTrainerSprite(px, py, trainerSpriteProfile({ sprite: "player", color: "#ef704b" }), player.dir, time, !!playerMotion);
+  }
+
+  function trainerSpriteProfile(actor) {
+    const base = {
+      outline: "#18231f",
+      skin: "#f0bd8e",
+      hair: "#2a211d",
+      hat: "",
+      jacket: actor.color || "#ef704b",
+      shirt: "#fffdf6",
+      pants: "#263f63",
+      shoes: "#1f2428",
+      accent: "#f1c84b"
+    };
+    const profiles = {
+      player: { hat: "#ef704b", jacket: "#e85d4c", pants: "#203b62", accent: "#fffdf6" },
+      nurse: { hair: "#7b3141", hat: "#fff2f5", jacket: "#ef704b", pants: "#7d4251", accent: "#fffdf6" },
+      professor: { hair: "#6d6f73", jacket: "#ffffff", shirt: "#5bb9d6", pants: "#4b5362", accent: "#5bb9d6" },
+      scout: { hat: "#7fbf5f", jacket: "#4f9c55", pants: "#66513a", accent: "#fff0a8" },
+      rival: { hair: "#4a3327", hat: "#f1c84b", jacket: "#f1c84b", pants: "#2d405f", accent: "#ef704b" },
+      leader: { hair: "#272236", jacket: actor.color || "#7567d9", pants: "#222a35", accent: "#fffdf6" },
+      umbra: { skin: "#d6a886", hair: "#15151b", hat: "#272236", jacket: "#443f58", pants: "#171722", accent: "#d84d74" },
+      umbraAdmin: { skin: "#d6a886", hair: "#1b1223", hat: "#594678", jacket: "#594678", pants: "#171722", accent: "#f1c84b" },
+      umbraBoss: { skin: "#d6a886", hair: "#101017", hat: "#272236", jacket: "#272236", pants: "#101017", accent: "#dc5c94" },
+      captain: { hat: "#3398c8", jacket: "#2d799f", pants: "#263f63", accent: "#fffdf6" },
+      worker: { hat: "#d5b125", jacket: "#6f8491", pants: "#3d3a32", accent: "#d5b125" },
+      scholar: { hair: "#594678", jacket: "#d4c5df", pants: "#443f58", accent: "#dc5c94" },
+      elder: { hair: "#d7d7d7", jacket: "#8e55b7", pants: "#4d3e56", accent: "#fffdf6" },
+      guide: { hat: actor.color || "#7fbf5f", jacket: actor.color || "#7fbf5f", pants: "#3f5068", accent: "#fffdf6" }
+    };
+    return { ...base, ...(profiles[actor.sprite] || {}) };
+  }
+
+  function drawTrainerSprite(px, py, profile, dir, time, moving) {
+    const x = Math.round(px);
+    const y = Math.round(py);
+    const bob = Math.round((moving ? Math.sin(time / 62) * 2 : Math.sin(time / 420) * 1));
+    const leg = moving ? Math.round(Math.sin(time / 62) * 2) : 0;
+    const side = dir === "left" ? -1 : dir === "right" ? 1 : 0;
+    const sy = y + bob;
+
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
     ctx.beginPath();
-    ctx.ellipse(px + 16, py + 28, 12, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 16, y + 29, 12, 4, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#f2c08f";
-    ctx.fillRect(px + 10, py + 6 + bob, 12, 9);
-    ctx.fillStyle = "#17211d";
-    ctx.fillRect(px + 8, py + 3 + bob, 16, 5);
-    ctx.fillStyle = "#ef704b";
-    ctx.fillRect(px + 7, py + 14 + bob, 18, 13);
-    ctx.fillStyle = "#203b62";
-    ctx.fillRect(px + 9, py + 27 + bob, 5, 5);
-    ctx.fillRect(px + 18, py + 27 + bob, 5, 5);
+
+    ctx.fillStyle = profile.outline;
+    ctx.fillRect(x + 7, sy + 13, 18, 15);
+    ctx.fillRect(x + 8, sy + 26, 7, 6 + Math.max(0, leg));
+    ctx.fillRect(x + 17, sy + 26, 7, 6 + Math.max(0, -leg));
+    ctx.fillRect(x + 8, sy + 4, 16, 11);
+
+    ctx.fillStyle = profile.pants;
+    ctx.fillRect(x + 9, sy + 25, 5, 6 + Math.max(0, leg));
+    ctx.fillRect(x + 18, sy + 25, 5, 6 + Math.max(0, -leg));
+    ctx.fillStyle = profile.shoes;
+    ctx.fillRect(x + 8, sy + 30 + Math.max(0, leg), 7, 2);
+    ctx.fillRect(x + 17, sy + 30 + Math.max(0, -leg), 7, 2);
+
+    ctx.fillStyle = profile.jacket;
+    ctx.fillRect(x + 8, sy + 14, 16, 12);
+    ctx.fillStyle = profile.shirt;
+    ctx.fillRect(x + 13, sy + 15, 6, 10);
+    ctx.fillStyle = profile.accent;
+    ctx.fillRect(x + 9, sy + 15, 4, 3);
+    ctx.fillRect(x + 19, sy + 15, 4, 3);
+
+    ctx.fillStyle = profile.outline;
+    ctx.fillRect(x + 5, sy + 16, 4, 9);
+    ctx.fillRect(x + 23, sy + 16, 4, 9);
+    ctx.fillStyle = profile.skin;
+    ctx.fillRect(x + 6, sy + 17 + Math.max(0, side), 3, 7);
+    ctx.fillRect(x + 23, sy + 17 + Math.max(0, -side), 3, 7);
+
+    ctx.fillStyle = profile.skin;
+    ctx.fillRect(x + 10, sy + 6, 12, 8);
+    ctx.fillStyle = profile.hair;
+    ctx.fillRect(x + 9, sy + 4, 14, 4);
+    ctx.fillRect(x + 8, sy + 7, 3, 5);
+    ctx.fillRect(x + 21, sy + 7, 3, 5);
+    if (profile.hat) {
+      ctx.fillStyle = profile.outline;
+      ctx.fillRect(x + 7, sy + 2, 18, 5);
+      ctx.fillStyle = profile.hat;
+      ctx.fillRect(x + 8, sy + 2, 16, 4);
+      ctx.fillRect(x + 12, sy, 8, 3);
+      if (dir === "down") ctx.fillRect(x + 10, sy + 6, 12, 2);
+    }
+
+    ctx.fillStyle = profile.outline;
+    if (dir === "up") {
+      ctx.fillRect(x + 10, sy + 8, 12, 2);
+    } else if (dir === "left") {
+      ctx.fillRect(x + 10, sy + 10, 3, 2);
+    } else if (dir === "right") {
+      ctx.fillRect(x + 19, sy + 10, 3, 2);
+    } else {
+      ctx.fillRect(x + 12, sy + 10, 2, 2);
+      ctx.fillRect(x + 18, sy + 10, 2, 2);
+    }
+
+    ctx.fillStyle = "rgba(255,255,255,0.22)";
+    ctx.fillRect(x + 11, sy + 6, 3, 2);
+  }
+
+  function drawAlertBubble(px, py, time, mark) {
+    const bob = Math.sin(time / 220) * 2;
+    ctx.fillStyle = "rgba(23,33,29,0.24)";
+    ctx.beginPath();
+    ctx.arc(px + 16, py - 4 + bob, 8, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = "#fffdf6";
-    if (player.dir === "left") ctx.fillRect(px + 8, py + 11 + bob, 4, 2);
-    else if (player.dir === "right") ctx.fillRect(px + 20, py + 11 + bob, 4, 2);
-    else ctx.fillRect(px + 13, py + 10 + bob, 6, 2);
+    ctx.beginPath();
+    ctx.arc(px + 16, py - 6 + bob, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#cf4d4d";
+    ctx.font = "900 10px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(mark, px + 16, py - 2 + bob);
   }
 
   function tileAt(x, y) {
     if (x < 0 || y < 0 || x >= WORLD.width || y >= WORLD.height) return "tree";
     if (isBuildingCell(x, y)) return "building";
     if (x === 0 || y === 0 || x === WORLD.width - 1 || y === WORLD.height - 1) return "tree";
-    if (isWater(x, y)) return "water";
     if (isPath(x, y)) return "path";
+    if (isCityGround(x, y)) return "city";
+    if (isWater(x, y)) return "water";
     if (isRock(x, y)) return "rock";
     if (isTreeCluster(x, y)) return "tree";
     if (isTallGrass(x, y)) return "tallgrass";
@@ -1125,42 +2067,64 @@
   }
 
   function isPath(x, y) {
-    if (y === 11 && x >= 3 && x <= 30) return true;
-    if (x === 16 && y >= 5 && y <= 18) return true;
-    if (y === 7 && x >= 5 && x <= 28) return true;
-    if (x === 5 && y >= 6 && y <= 11) return true;
-    if (x === 28 && y >= 7 && y <= 11) return true;
-    if (x >= 13 && x <= 19 && y === 18) return true;
-    return false;
+    if (ROAD_SEGMENTS.some((segment) => roadContains(segment, x, y))) return true;
+    const city = cityAt(x, y);
+    if (!city) return false;
+    const centerX = city.x + Math.floor(city.w / 2);
+    const centerY = city.y + Math.floor(city.h / 2);
+    if (Math.abs(x - centerX) <= 1 || Math.abs(y - centerY) <= 1) return true;
+    return BUILDINGS.some((building) => (
+      building.cityId === city.id &&
+      Math.abs(x - building.doorX) <= 1 &&
+      y >= building.y + building.h &&
+      y <= centerY + 1
+    ));
   }
 
   function isWater(x, y) {
-    const dx = x - 27;
-    const dy = y - 16;
-    return dx * dx * 0.75 + dy * dy * 1.35 < 20 || (x >= 30 && y >= 13 && y <= 19);
+    if (x >= 90 && y >= 6 && y <= 34) return true;
+    if (x >= 84 && y >= 20 && y <= 29 && (x + y) % 5 !== 0) return true;
+    const harborDx = x - 84;
+    const harborDy = y - 21;
+    if (harborDx * harborDx * 0.75 + harborDy * harborDy * 1.4 < 34) return true;
+    const lakeDx = x - 15;
+    const lakeDy = y - 31;
+    if (lakeDx * lakeDx * 0.92 + lakeDy * lakeDy * 1.25 < 28) return true;
+    const frostDx = x - 55;
+    const frostDy = y - 46;
+    if (frostDx * frostDx * 1.1 + frostDy * frostDy * 0.8 < 18) return true;
+    return false;
   }
 
   function isRock(x, y) {
-    if (x >= 2 && x <= 10 && y >= 16 && y <= 19 && !isPath(x, y)) return (x + y) % 3 !== 0;
-    if (x >= 20 && x <= 24 && y >= 3 && y <= 5) return (x * 2 + y) % 4 !== 1;
+    if (isPath(x, y) || isCityGround(x, y)) return false;
+    if (x >= 45 && x <= 72 && y >= 2 && y <= 23) return (x * 2 + y) % 5 < 2;
+    if (x >= 60 && x <= 75 && y >= 28 && y <= 48) return (x + y * 3) % 6 < 2;
+    if (x >= 72 && x <= 86 && y >= 48 && y <= 56) return (x * y) % 7 === 0;
     return false;
   }
 
   function isTreeCluster(x, y) {
-    if (x <= 2 || y <= 1) return true;
-    if (x >= 31 && y <= 10) return true;
-    if (x >= 7 && x <= 12 && y >= 2 && y <= 5) return (x + y) % 2 === 0;
-    if (x >= 1 && x <= 4 && y >= 12 && y <= 15) return (x + y) % 2 === 1;
-    if (x >= 19 && x <= 23 && y >= 15 && y <= 20) return (x + y) % 3 === 0;
+    if (isPath(x, y) || isCityGround(x, y) || isWater(x, y)) return false;
+    if (x <= 2 || y <= 2 || x >= WORLD.width - 3 || y >= WORLD.height - 3) return true;
+    if (x >= 2 && x <= 28 && y >= 20 && y <= 39) return (x + y) % 4 !== 0;
+    if (x >= 28 && x <= 43 && y >= 38 && y <= 50) return (x * 3 + y) % 5 < 3;
+    if (x >= 5 && x <= 25 && y >= 50 && y <= 66) return (x + y * 2) % 6 < 2;
+    if (x >= 34 && x <= 60 && y >= 17 && y <= 28) return (x + y) % 6 === 0;
     return false;
   }
 
   function isTallGrass(x, y) {
-    if (x >= 7 && x <= 14 && y >= 8 && y <= 14 && !isPath(x, y)) return true;
-    if (x >= 18 && x <= 24 && y >= 8 && y <= 14 && !isPath(x, y)) return true;
-    if (x >= 2 && x <= 12 && y >= 15 && y <= 20 && !isRock(x, y)) return true;
-    if (x >= 24 && x <= 31 && y >= 9 && y <= 19 && !isWater(x, y) && !isPath(x, y)) return true;
-    return false;
+    if (isPath(x, y) || isCityGround(x, y) || isRock(x, y) || isWater(x, y) || isTreeCluster(x, y)) return false;
+    const zone = zoneAt(x, y);
+    if (!zone) return false;
+    return (hash(x, y) + x + y) % 5 !== 0;
+  }
+
+  function isCityGround(x, y) {
+    const city = cityAt(x, y);
+    if (!city) return false;
+    return x > city.x && x < city.x + city.w - 1 && y > city.y && y < city.y + city.h - 1;
   }
 
   function isBuildingCell(x, y) {
@@ -1175,31 +2139,92 @@
   function isBlocked(x, y) {
     const tile = tileAt(x, y);
     if (["tree", "rock", "water", "building"].includes(tile)) return true;
+    if (gateAt(x, y)) return true;
+    if (lockedCityAt(x, y)) return true;
     return editionNpcs().some((npc) => npc.x === x && npc.y === y);
+  }
+
+  function gateAt(x, y) {
+    return GATE_DEFS.find((gate) => (
+      !isGateOpen(gate) &&
+      x >= gate.x &&
+      x < gate.x + gate.w &&
+      y >= gate.y &&
+      y < gate.y + gate.h
+    ));
+  }
+
+  function isGateOpen(gate) {
+    if (gate.badge && !state.badges.includes(gate.badge)) return false;
+    if (gate.trainer && !state.flags.trainers[gate.trainer]) return false;
+    return true;
+  }
+
+  function isCityLocked(cityId) {
+    const lock = CITY_LOCKS[cityId];
+    if (!lock) return false;
+    if (lock.badge && !state.badges.includes(lock.badge)) return true;
+    if (lock.trainer && !state.flags.trainers[lock.trainer]) return true;
+    return false;
+  }
+
+  function lockedCityAt(x, y) {
+    const city = cityAt(x, y);
+    if (!city) return null;
+    const lock = CITY_LOCKS[city.id];
+    if (!lock) return null;
+    if (lock.badge && !state.badges.includes(lock.badge)) return { city, lock };
+    if (lock.trainer && !state.flags.trainers[lock.trainer]) return { city, lock };
+    return null;
   }
 
   function routeKey() {
     const { x, y } = state.player;
-    if (x <= 9 && y <= 8) return "town";
-    if (x >= 24 && y <= 9) return "gym";
-    if (x >= 24 && y >= 12) return "coast";
-    if (x <= 12 && y >= 15) return "granite";
-    if (x >= 18 && y >= 8 && y <= 15) return "orchard";
-    if (x >= 7 && x <= 14 && y >= 8) return "meadow";
+    const city = cityAt(x, y);
+    if (city) return city.id;
+    const zone = zoneAt(x, y);
+    if (zone) return zone.id;
+    if (isWater(x, y)) return "coast";
+    if (isTreeCluster(x, y)) return "woods";
     return "road";
   }
 
   function currentRouteName() {
-    const edition = getEdition();
-    return edition.routeNames[routeKey()] || edition.routeNames.road;
+    return ROUTE_NAMES[routeKey()] || ROUTE_NAMES.road;
   }
 
   function encounterArea() {
-    const route = routeKey();
-    if (route === "coast") return "coast";
-    if (route === "granite") return "granite";
-    if (route === "orchard") return "orchard";
-    return "meadow";
+    const zone = zoneAt(state.player.x, state.player.y);
+    return zone ? zone.encounter : "meadow";
+  }
+
+  function cityAt(x, y) {
+    return CITY_DEFS.find((city) => rectContains(city, x, y));
+  }
+
+  function zoneAt(x, y) {
+    return WILD_ZONES.find((zone) => rectContains(zone, x, y));
+  }
+
+  function rectContains(rect, x, y) {
+    return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
+  }
+
+  function roadContains(segment, x, y) {
+    const minX = Math.min(segment.x1, segment.x2);
+    const maxX = Math.max(segment.x1, segment.x2);
+    const minY = Math.min(segment.y1, segment.y2);
+    const maxY = Math.max(segment.y1, segment.y2);
+    const width = segment.w || 0;
+    if (segment.y1 === segment.y2) return x >= minX && x <= maxX && Math.abs(y - segment.y1) <= width;
+    if (segment.x1 === segment.x2) return y >= minY && y <= maxY && Math.abs(x - segment.x1) <= width;
+    const dx = segment.x2 - segment.x1;
+    const dy = segment.y2 - segment.y1;
+    const lengthSq = dx * dx + dy * dy;
+    const t = clamp(((x - segment.x1) * dx + (y - segment.y1) * dy) / lengthSq, 0, 1);
+    const closestX = segment.x1 + dx * t;
+    const closestY = segment.y1 + dy * t;
+    return Math.hypot(x - closestX, y - closestY) <= width + 0.72;
   }
 
   function tryMove(dir) {
@@ -1210,23 +2235,44 @@
     state.player.dir = dir;
     const nextX = state.player.x + delta.x;
     const nextY = state.player.y + delta.y;
+    const gate = gateAt(nextX, nextY);
+    if (gate) {
+      showDialog(gate.title, gate.text);
+      tone(120, 0.035, "square");
+      return;
+    }
+    const cityLock = lockedCityAt(nextX, nextY);
+    if (cityLock) {
+      showDialog(`${cityLock.city.name} Gate`, cityLock.lock.text);
+      tone(120, 0.035, "square");
+      return;
+    }
     if (isBlocked(nextX, nextY)) {
       tone(120, 0.035, "square");
       renderTopline();
       return;
     }
+    footstepEffects.push({ x: state.player.x, y: state.player.y, time: performance.now() });
+    if (footstepEffects.length > 10) footstepEffects.shift();
+    playerMotion = {
+      fromX: state.player.x,
+      fromY: state.player.y,
+      toX: nextX,
+      toY: nextY,
+      started: performance.now(),
+      duration: 118
+    };
     state.player.x = nextX;
     state.player.y = nextY;
     state.player.steps += 1;
     if (state.player.steps % 8 === 0) saveGame(false);
     renderTopline();
-    maybeWildEncounter();
   }
 
   function maybeWildEncounter() {
     if (!state.party.length || state.battle) return;
     if (tileAt(state.player.x, state.player.y) !== "tallgrass") return;
-    const rate = state.badges.includes(getEdition().leaderBadge) ? 0.1 : 0.14;
+    const rate = state.badges.length ? 0.1 : 0.14;
     if (Math.random() > rate) return;
     const area = encounterArea();
     const wild = chooseWildPokemon(area);
@@ -1240,6 +2286,63 @@
       ended: false,
       forcedSwitch: false
     });
+  }
+
+  function checkTrainerVision(time) {
+    if (!state.party.length || state.battle || state.dialog || trainerApproach) return false;
+    const npc = editionNpcs().find((entry) => (
+      entry.action === "trainer" &&
+      !state.flags.trainers[entry.trainerId] &&
+      canTrainerAutoChallenge(entry.trainerId) &&
+      hasLineOfSight(entry, state.player, 6)
+    ));
+    if (!npc) return false;
+    const dx = Math.sign(state.player.x - npc.x);
+    const dy = Math.sign(state.player.y - npc.y);
+    trainerApproach = {
+      npcId: npc.id,
+      fromX: npc.x,
+      fromY: npc.y,
+      toX: state.player.x - dx,
+      toY: state.player.y - dy,
+      started: time,
+      duration: 520
+    };
+    showDialog(npc.name, npc.trainerId && npc.trainerId.startsWith("umbra") ? "Team Umbra has business here. Battle." : "Eyes up, challenger. Let's battle.");
+    tone(880, 0.08, "square");
+    window.setTimeout(() => {
+      if (state.battle) return;
+      if (state.dialog && state.dialog.speaker === npc.name) state.dialog = null;
+      trainerApproach = null;
+      startTrainerBattle(npc.trainerId);
+      renderAll();
+    }, 760);
+    return true;
+  }
+
+  function canTrainerAutoChallenge(trainerId) {
+    const trainer = editionTrainer(trainerId);
+    if (!trainer || state.flags.trainers[trainerId]) return false;
+    if (trainer.requiresTrainer && !state.flags.trainers[trainer.requiresTrainer]) return false;
+    if (trainer.minBadges && state.badges.length < trainer.minBadges) return false;
+    if (trainer.gymRank && state.badges.length < trainer.gymRank - 1) return false;
+    return true;
+  }
+
+  function hasLineOfSight(npc, player, range) {
+    const sameColumn = npc.x === player.x;
+    const sameRow = npc.y === player.y;
+    if (!sameColumn && !sameRow) return false;
+    const distance = Math.abs(npc.x - player.x) + Math.abs(npc.y - player.y);
+    if (distance < 2 || distance > range) return false;
+    const dx = Math.sign(player.x - npc.x);
+    const dy = Math.sign(player.y - npc.y);
+    for (let step = 1; step < distance; step += 1) {
+      const x = npc.x + dx * step;
+      const y = npc.y + dy * step;
+      if (["tree", "rock", "water", "building"].includes(tileAt(x, y)) || gateAt(x, y)) return false;
+    }
+    return true;
   }
 
   function chooseWildPokemon(area) {
@@ -1271,16 +2374,8 @@
       return;
     }
     const building = buildingAt(target.x, target.y);
-    if (building && building.id === "clinic") {
-      healParty(true);
-      return;
-    }
-    if (building && building.id === "gym") {
-      showDialog(getEdition().leaderName, "The gym challenge waits at the arena gate.");
-      return;
-    }
-    if (building && building.id === "lab") {
-      professorGift();
+    if (building) {
+      enterInterior(building);
       return;
     }
     showDialog("", "The route hums quietly.");
@@ -1297,6 +2392,10 @@
     }
     if (npc.action === "trainer") {
       startTrainerBattle(npc.trainerId);
+      return;
+    }
+    if (npc.action === "talk") {
+      showDialog(npc.name, npc.text || "Keep your party healed and your eyes open.");
     }
   }
 
@@ -1347,15 +2446,170 @@
     tone(784, 0.1, "sine", 0.12);
   }
 
+  function enterInterior(building) {
+    if (!state.party.length) return;
+    currentInterior = building;
+    const city = cityName(building.cityId);
+    const gym = building.trainerId ? GYM_DEFS.find((entry) => entry.trainerId === building.trainerId) : null;
+    const copy = interiorCopy(building, city, gym);
+    els.interiorKicker.textContent = city;
+    els.interiorTitle.textContent = copy.title;
+    els.interiorText.textContent = copy.text;
+    els.interiorScene.dataset.kind = building.kind;
+    els.interiorScene.dataset.city = building.cityId || "";
+    els.interiorPrimaryButton.textContent = copy.primary;
+    els.interiorSecondaryButton.textContent = copy.secondary;
+    els.interiorSecondaryButton.hidden = !copy.secondary;
+    els.interiorModal.hidden = false;
+    tone(392, 0.055, "triangle");
+  }
+
+  function interiorCopy(building, city, gym) {
+    if (building.kind === "clinic") {
+      return { title: `${city} Clinic`, text: "Clean lights, soft chimes, and a nurse ready to restore your party before the road gets rough.", primary: "Heal party", secondary: "Talk" };
+    }
+    if (building.kind === "market") {
+      return { title: `${city} Market`, text: "Shelves of balls, potions, berries, and local rumors. The clerk adjusts stock as your badges grow.", primary: "Restock", secondary: "Rumor" };
+    }
+    if (building.kind === "lab") {
+      return { title: getEdition().professor, text: "Maps, dex monitors, and starter notes cover the professor's benches. This is where the circuit starts feeling real.", primary: "Field kit", secondary: "Research" };
+    }
+    if (building.kind === "gym") {
+      const won = gym && state.badges.includes(gym.badge);
+      return { title: gym ? `${gym.leader}'s ${gym.type} Gym` : "Circuit Gym", text: won ? `The ${gym.badge} banner hangs over the arena. Trainers here are already telling your story.` : `A full arena waits inside. Win here to earn the ${gym.badge}.`, primary: won ? "Rematch talk" : "Challenge", secondary: "Inspect" };
+    }
+    if (building.kind === "umbra") {
+      return { title: "Crown Station", text: "The station hums with stolen signal power. Team Umbra's blackout equipment fills the room.", primary: "Confront", secondary: "Inspect" };
+    }
+    if (building.kind === "league") {
+      return { title: "League Desk", text: "A polished counter lists badge registrations, Crown Station status, and your rival's signed challenge slip.", primary: "Register", secondary: "Review" };
+    }
+    return { title: `${city} Home`, text: "A small local home full of city-specific chatter, travel hints, and a warm pause from the circuit.", primary: "Chat", secondary: "Rest" };
+  }
+
+  function useInteriorPrimary() {
+    if (!currentInterior) return;
+    const building = currentInterior;
+    els.interiorModal.hidden = true;
+    currentInterior = null;
+    if (building.kind === "clinic") healParty(true);
+    else if (building.kind === "market") marketRestock(building);
+    else if (building.kind === "lab") professorGift();
+    else if (building.kind === "gym" || building.kind === "umbra") startTrainerBattle(building.trainerId);
+    else if (building.kind === "league") leagueDesk();
+    else {
+      const city = cityById(building.cityId);
+      showDialog(city ? `${city.name} Resident` : "Resident", localHouseLine(building.cityId));
+    }
+  }
+
+  function useInteriorSecondary() {
+    if (!currentInterior) return;
+    const building = currentInterior;
+    const city = cityName(building.cityId);
+    let line = "";
+    if (building.kind === "clinic") line = "Healthy partners mean longer routes, cleaner rival battles, and fewer emergency walks home.";
+    else if (building.kind === "market") line = marketRumor();
+    else if (building.kind === "lab") line = professorStoryLine();
+    else if (building.kind === "gym") line = gymGuideLine(building.trainerId);
+    else if (building.kind === "umbra") line = "Power is being pulled from every gym signal stone into one Crown antenna.";
+    else if (building.kind === "league") line = `${state.badges.length}/${GYM_DEFS.length} badges registered. Team Umbra status: ${state.flags.trainers["umbra-boss"] ? "cleared" : "active"}.`;
+    else line = localHouseLine(building.cityId);
+    els.interiorText.textContent = `${city}: ${line}`;
+    tone(523, 0.045, "triangle");
+  }
+
+  function localHouseLine(cityId) {
+    const lines = {
+      lumen: "Professor Maple says the first brave step is usually just leaving town.",
+      bracken: "Our vines twitch whenever Team Umbra drives through the east gate.",
+      quarry: "The quarry sings when the cable road is clear. Lately it has been dead quiet.",
+      harbor: "If the lighthouse flickers, look south. Umbra boats hate witnesses.",
+      emberfall: "Cinder's furnace burns hotter when a challenger carries real purpose.",
+      crown: "Crown City lights used to be visible from every route. We miss that glow.",
+      frostvale: "Noelle trains patience. Ice punishes rushed choices.",
+      neon: "Volt says every circuit needs resistance before it can shine.",
+      thornmere: "Mallow's mist can hide rare partners and bad ideas equally well.",
+      astral: "Sol reads the sky, but even stars get scrambled by Umbra signals."
+    };
+    return lines[cityId] || "Every city has a story if you slow down enough to hear it.";
+  }
+
+  function marketRumor() {
+    if (state.badges.length >= 8) return "Everyone is buying extra potions for Crown City. Something big is ending there.";
+    if (state.badges.length >= 5) return "Umbra grunts keep asking for batteries and dark cloth. Subtle, they are not.";
+    return "Fresh trainers do best when they buy before they need supplies.";
+  }
+
+  function professorStoryLine() {
+    if (state.flags.trainers["umbra-boss"]) return "You restored the region's signal. Now the league can measure battles cleanly again.";
+    if (state.badges.length >= 5) return "Your badge data shows Umbra is not stealing trophies. They are stealing the network those badges power.";
+    if (state.badges.length) return "Every badge gives me a clearer signal. Keep moving around the circuit.";
+    return "Jules ran east before I could finish the safety lecture. Please be the responsible one.";
+  }
+
+  function gymGuideLine(trainerId) {
+    const trainer = editionTrainer(trainerId);
+    if (!trainer) return "Study your type matchups before stepping onto the arena floor.";
+    if (state.flags.trainers[trainerId]) return `${trainer.name} is still talking about that battle. You left a mark here.`;
+    return `${trainer.name} favors pressure and clean switches. Bring a healed party and a plan.`;
+  }
+
+  function marketRestock(building) {
+    if (!state.party.length) return;
+    const city = cityName(building.cityId);
+    const cost = Math.min(state.money, 120 + state.badges.length * 35);
+    const balls = 3 + Math.floor(state.badges.length / 2);
+    const potions = 1 + (state.badges.length >= 4 ? 1 : 0);
+    state.money -= cost;
+    state.bag.balls += balls;
+    state.bag.potions += potions;
+    if (state.badges.length >= 3) state.bag.berries += 1;
+    pushLog(`Restocked in ${city}.`);
+    showDialog("Market Clerk", `You spent $${cost} and stocked ${balls} balls, ${potions} potions, and field snacks.`);
+    saveGame(false);
+    renderAll();
+    tone(622, 0.07, "triangle");
+    tone(784, 0.08, "triangle", 0.06);
+  }
+
+  function leagueDesk() {
+    if (state.badges.length < GYM_DEFS.length) {
+      showDialog("League Desk", `The Crown League requires all ${GYM_DEFS.length} circuit badges.`);
+      return;
+    }
+    if (!state.flags.trainers["umbra-boss"]) {
+      showDialog("League Desk", "Crown Station is dark. Stop Team Umbra before the desk can certify challengers.");
+      return;
+    }
+    showFinish("Crown League Ready", "Eight badges, a stopped blackout, and a rival waiting at the gate. PokeG's grand circuit is open for the next chapter.");
+    pushLog("Crown League certification unlocked.");
+    saveGame(false);
+  }
+
   function startTrainerBattle(trainerId) {
     const trainer = editionTrainer(trainerId);
     if (!trainer) return;
     if (state.flags.trainers[trainerId]) {
-      showDialog(trainer.name, "We already battled. Keep training.");
+      showDialog(trainer.name, trainerAfterLine(trainerId));
       return;
     }
-    if (trainerId === "leader" && !state.flags.trainers.rival) {
-      showDialog(getEdition().leaderName, "Find your rival on the east road first.");
+    if (trainer.requiresTrainer && !state.flags.trainers[trainer.requiresTrainer]) {
+      const prior = editionTrainer(trainer.requiresTrainer);
+      showDialog(trainer.name, `${prior ? prior.name : "Another trainer"} is part of this story first.`);
+      return;
+    }
+    if (trainer.minBadges && state.badges.length < trainer.minBadges) {
+      showDialog(trainer.name, `Bring ${trainer.minBadges} badge${trainer.minBadges === 1 ? "" : "s"} before this battle.`);
+      return;
+    }
+    if (trainer.gymRank && state.badges.length < trainer.gymRank - 1) {
+      const previous = GYM_DEFS[trainer.gymRank - 2];
+      showDialog(trainer.name, `The ${previous.badge} should be earned before this gym.`);
+      return;
+    }
+    if (trainerId === "leader" && !state.flags.trainers["rival-lumen"]) {
+      showDialog(getEdition().leaderName, "Find your rival on Sunpetal Route first.");
       return;
     }
     const team = trainerTeam(trainerId);
@@ -1381,22 +2635,25 @@
     const edition = getEdition();
     const avg = partyAverageLevel();
     if (trainer.dynamic === "rival") {
+      const rank = trainer.rank || 2;
       const starterType = state.party[0] ? typesOf(state.party[0])[0] : "grass";
       const counter = edition.id === "sapphire"
         ? starterType === "grass" ? 255 : starterType === "fire" ? 258 : starterType === "water" ? 252 : 261
         : starterType === "grass" ? 4 : starterType === "fire" ? 7 : starterType === "water" ? 1 : 27;
-      const scale = clamp(Math.round(avg + 1), 7, 13);
+      const scale = clamp(Math.round(avg + rank), 6 + rank * 3, 9 + rank * 4);
       if (edition.id === "sapphire") {
         return [
-          createPokemon(263, scale),
+          createPokemon(rank > 5 ? 262 : 263, scale),
           createPokemon(counter, scale + 1),
-          createPokemon(278, Math.max(7, scale))
+          createPokemon(rank > 7 ? 282 : 278, Math.max(7, scale)),
+          ...(rank >= 9 ? [createPokemon(363, scale + 2)] : [])
         ];
       }
       return [
-        createPokemon(133, scale),
+        createPokemon(rank > 5 ? 20 : 133, scale),
         createPokemon(counter, scale + 1),
-        createPokemon(21, Math.max(7, scale))
+        createPokemon(rank > 7 ? 147 : 21, Math.max(7, scale)),
+        ...(rank >= 9 ? [createPokemon(143, scale + 2)] : [])
       ];
     }
     if (trainer.dynamic === "leader") {
@@ -1417,6 +2674,22 @@
     return trainer.team.map((entry) => createPokemon(entry.id, entry.level));
   }
 
+  function trainerAfterLine(trainerId) {
+    if (trainerId.startsWith("rival")) {
+      if (trainerId === "rival-crown") return "No shortcuts left. The next time we battle, it is for the league story.";
+      if (state.badges.length >= 5) return "Umbra is bigger than a road gang. I will keep their scouts busy.";
+      return "I am getting stronger too. Do not make the next badge look easy.";
+    }
+    if (trainerId.startsWith("umbra")) {
+      if (trainerId === "umbra-boss") return "The Crown antenna is yours. Umbra's broadcast is over.";
+      return "You broke this operation, but the signal still points to Crown City.";
+    }
+    const gym = GYM_DEFS.find((entry) => entry.trainerId === trainerId);
+    if (gym) return `The ${gym.badge} is yours. ${gym.leader} is watching where your story goes next.`;
+    if (trainerId === "scout") return "Those routes are bigger than they look. Use the map, not just instinct.";
+    return "We already battled. Keep training.";
+  }
+
   function startBattle(battle) {
     const active = firstAliveIndex();
     if (active === -1) {
@@ -1427,6 +2700,7 @@
     resetBattleStages();
     state.battle = battle;
     els.battleOverlay.hidden = false;
+    pulseBattleFx(battle.kind === "trainer" ? "trainer-entry" : "wild-entry");
     renderBattle();
     saveGame(false);
     tone(196, 0.08, "sawtooth");
@@ -1471,6 +2745,18 @@
 
     if (battle.forcedSwitch) showSwitchPanel(true);
     else if (els.switchPanel.hidden) els.switchPanel.innerHTML = "";
+  }
+
+  function pulseBattleFx(kind) {
+    window.clearTimeout(battleFxTimer);
+    els.battleStage.classList.remove("fx-player-hit", "fx-enemy-hit", "fx-victory", "fx-trainer-entry", "fx-wild-entry");
+    void els.battleStage.offsetWidth;
+    els.battleStage.classList.add(`fx-${kind}`);
+    els.battleFlash.textContent = kind === "victory" ? "WIN" : kind.includes("entry") ? "!" : "";
+    battleFxTimer = window.setTimeout(() => {
+      els.battleStage.classList.remove("fx-player-hit", "fx-enemy-hit", "fx-victory", "fx-trainer-entry", "fx-wild-entry");
+      els.battleFlash.textContent = "";
+    }, 520);
   }
 
   function combatantHtml(pokemon, side) {
@@ -1560,6 +2846,7 @@
     defender.hp = clamp(defender.hp - damage, 0, defender.maxHp);
     if (damage === 0) lines.push("It had no effect.");
     else lines.push(`${defender.name} took ${damage} damage.`);
+    if (damage > 0) pulseBattleFx(attacker === activePokemon() ? "enemy-hit" : "player-hit");
     if (typeMod > 1) lines.push("It was super effective.");
     if (typeMod > 0 && typeMod < 1) lines.push("It was not very effective.");
     if (move.drain && damage > 0) {
@@ -1643,10 +2930,12 @@
           battle.finishText = battle.badgeText || getEdition().badgeText;
         }
         pushLog(`Defeated ${battle.trainerName}.`);
+        handleStoryAfterBattle(battle);
       } else {
         pushLog(`Defeated a wild ${battle.enemy.name}.`);
       }
       battle.log.push("Battle complete.");
+      pulseBattleFx("victory");
       tone(784, 0.08, "triangle");
       tone(1046, 0.14, "triangle", 0.08);
     }
@@ -1654,17 +2943,37 @@
     renderAfterBattleAction();
   }
 
+  function handleStoryAfterBattle(battle) {
+    const trainer = editionTrainer(battle.trainerId);
+    if (!trainer) return;
+    if (trainer.storyLog) pushLog(trainer.storyLog);
+    if (trainer.story === "umbra") {
+      state.flags.story.umbraStage = Math.max(state.flags.story.umbraStage || 0, trainer.minBadges || 1);
+      state.bag.balls += 1;
+      battle.log.push("You recovered a supply ball from Team Umbra.");
+    }
+    if (trainer.gymRank && trainer.gymRank === GYM_DEFS.length) {
+      battle.finishTitle = "Circuit Complete";
+      battle.finishText = "Eight badges are yours. Crown City is ready, but Team Umbra still has the station lights under their control.";
+    }
+    if (battle.trainerId === "umbra-boss") {
+      battle.finishTitle = "Crown Lights Restored";
+      battle.finishText = "Director Vey's blackout protocol failed. The league desk is open, and Jules is waiting for a final gate battle.";
+      state.money += 500;
+    }
+  }
+
   function blackOut() {
     const battle = state.battle;
-    const clinicName = `${getEdition().routeNames.town} Clinic`;
+    const clinicName = "Lumen Village Clinic";
     const loss = Math.min(state.money, Math.max(20, Math.floor(state.money * 0.18)));
     state.money -= loss;
     battle.log.push(`You dropped $${loss} getting back to ${clinicName}.`);
     battle.ended = true;
     battle.locked = false;
     battle.forcedSwitch = false;
-    state.player.x = 5;
-    state.player.y = 7;
+    state.player.x = 12;
+    state.player.y = 12;
     healParty(false);
     pushLog(`You recovered at ${clinicName}.`);
     renderAfterBattleAction();
@@ -2042,7 +3351,17 @@
   }
 
   function isLocked() {
-    return !els.editionModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || !!state.battle || !!state.dialog || state.menuOpen;
+    return !els.editionModal.hidden ||
+      !els.introModal.hidden ||
+      !els.starterModal.hidden ||
+      !els.finishModal.hidden ||
+      !els.mapModal.hidden ||
+      !els.interiorModal.hidden ||
+      !!state.battle ||
+      !!state.dialog ||
+      state.menuOpen ||
+      !!playerMotion ||
+      !!trainerApproach;
   }
 
   function hash(x, y) {
@@ -2126,6 +3445,19 @@
     if ((key === " " || key === "enter") && state.dialog) {
       event.preventDefault();
       closeDialog();
+      return;
+    }
+    if (key === "escape" && !els.mapModal.hidden) {
+      event.preventDefault();
+      els.mapModal.hidden = true;
+      renderAll();
+      return;
+    }
+    if (key === "escape" && !els.interiorModal.hidden) {
+      event.preventDefault();
+      els.interiorModal.hidden = true;
+      currentInterior = null;
+      renderAll();
       return;
     }
     if (key === "escape" || key === "m") {
@@ -2221,6 +3553,10 @@
     const switchTarget = event.target.closest("[data-switch-to]");
     if (switchTarget) {
       switchTo(Number(switchTarget.dataset.switchTo));
+      return;
+    }
+    if (event.target.closest("[data-open-map]")) {
+      showRegionMap();
     }
   });
 
@@ -2245,6 +3581,17 @@
   });
 
   els.menuButton.addEventListener("click", () => toggleMenu());
+  els.mapButton.addEventListener("click", showRegionMap);
+  els.journalButton.addEventListener("click", () => {
+    if (!state.party.length) {
+      showToast("Choose a partner first.");
+      return;
+    }
+    activeTab = "log";
+    renderSidePanels();
+    toggleMenu(false);
+    tone(440, 0.045, "triangle");
+  });
   els.menuSaveButton.addEventListener("click", () => {
     if (!state.party.length) return;
     saveGame(true);
@@ -2262,6 +3609,19 @@
     saveGame(false);
     if (!state.audioMuted) tone(660, 0.06, "triangle");
   });
+  els.introNextButton.addEventListener("click", () => advanceIntro(false));
+  els.introSkipButton.addEventListener("click", () => advanceIntro(true));
+  els.mapCloseButton.addEventListener("click", () => {
+    els.mapModal.hidden = true;
+    renderAll();
+  });
+  els.interiorPrimaryButton.addEventListener("click", useInteriorPrimary);
+  els.interiorSecondaryButton.addEventListener("click", useInteriorSecondary);
+  els.interiorExitButton.addEventListener("click", () => {
+    els.interiorModal.hidden = true;
+    currentInterior = null;
+    renderAll();
+  });
   els.resetButton.addEventListener("click", () => {
     const ok = window.confirm("Reset this run?");
     if (!ok) return;
@@ -2269,8 +3629,11 @@
     state = freshState();
     applyEditionTheme("ember");
     els.editionModal.hidden = false;
+    els.introModal.hidden = true;
     els.starterModal.hidden = true;
     els.finishModal.hidden = true;
+    els.mapModal.hidden = true;
+    els.interiorModal.hidden = true;
     els.battleOverlay.hidden = true;
     renderAll();
   });
@@ -2284,7 +3647,10 @@
     els.finishModal.hidden = true;
     applyEditionTheme("ember");
     els.editionModal.hidden = false;
+    els.introModal.hidden = true;
     els.starterModal.hidden = true;
+    els.mapModal.hidden = true;
+    els.interiorModal.hidden = true;
     renderAll();
   });
   els.battleCloseButton.addEventListener("click", closeBattle);

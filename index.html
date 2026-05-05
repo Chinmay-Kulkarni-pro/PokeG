@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7fbf2">
-  <title>PokeG v2 - Versioned Routes</title>
+  <title>PokeG v3 - Grand Circuit</title>
   <link rel="preconnect" href="https://raw.githubusercontent.com">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,7 +14,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">PG</div>
         <div>
-          <h1 id="gameTitle">PokeG v2</h1>
+          <h1 id="gameTitle">PokeG v3</h1>
           <p id="routeName">Choose your edition</p>
         </div>
       </div>
@@ -22,9 +22,15 @@
         <div><span>Badges</span><strong id="badgeCount">0</strong></div>
         <div><span>Money</span><strong id="moneyCount">$300</strong></div>
         <div><span>Seen</span><strong id="seenCount">0</strong></div>
-        <div><span>Edition</span><strong id="editionName">v2</strong></div>
+        <div><span>Edition</span><strong id="editionName">v3</strong></div>
       </div>
       <div class="top-actions">
+        <button class="icon-button" id="mapButton" type="button" title="Region map" aria-label="Open region map">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zm7 .2v11.9l4 1.3V6.5zm-2 0L5 6.2v11.1l3-1zm8 1.3v11.9l3-1V6.2z"/></svg>
+        </button>
+        <button class="icon-button" id="journalButton" type="button" title="Journal" aria-label="Open journal">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v16H7a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2zm1 14h11V5H6v13a1 1 0 0 0 1 1zm2-9h7v2H9zm0 4h6v2H9z"/></svg>
+        </button>
         <button class="icon-button" id="menuButton" type="button" title="Menu" aria-label="Open menu">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v2H5zm0 5h14v2H5zm0 5h14v2H5z"/></svg>
         </button>
@@ -57,8 +63,9 @@
           <div class="pause-menu" id="pauseMenu" hidden>
             <button type="button" data-menu-tab="party">Pokemon</button>
             <button type="button" data-menu-tab="bag">Bag</button>
+            <button type="button" data-menu-tab="map">Map</button>
             <button type="button" data-menu-tab="dex">Pokedex</button>
-            <button type="button" data-menu-tab="log">Trainer</button>
+            <button type="button" data-menu-tab="log">Journal</button>
             <button type="button" id="menuSaveButton">Save</button>
             <button type="button" id="menuCloseButton">Close</button>
           </div>
@@ -92,18 +99,20 @@
         <div class="tabs" role="tablist" aria-label="Trainer views">
           <button class="tab is-active" type="button" data-tab="party" role="tab" aria-selected="true">Party</button>
           <button class="tab" type="button" data-tab="bag" role="tab" aria-selected="false">Bag</button>
+          <button class="tab" type="button" data-tab="map" role="tab" aria-selected="false">Map</button>
           <button class="tab" type="button" data-tab="dex" role="tab" aria-selected="false">Dex</button>
-          <button class="tab" type="button" data-tab="log" role="tab" aria-selected="false">Log</button>
+          <button class="tab" type="button" data-tab="log" role="tab" aria-selected="false">Journal</button>
         </div>
         <div class="panel-view is-active" id="partyPanel" role="tabpanel"></div>
         <div class="panel-view" id="bagPanel" role="tabpanel"></div>
+        <div class="panel-view" id="mapPanel" role="tabpanel"></div>
         <div class="panel-view" id="dexPanel" role="tabpanel"></div>
         <div class="panel-view" id="logPanel" role="tabpanel"></div>
       </aside>
     </main>
 
     <section class="battle-overlay" id="battleOverlay" aria-label="Battle" hidden>
-      <div class="battle-stage">
+      <div class="battle-stage" id="battleStage">
         <div class="battle-topline">
           <div id="battleTitle">Wild encounter</div>
           <button class="icon-button" id="battleCloseButton" type="button" title="Close" aria-label="Close battle">
@@ -114,6 +123,7 @@
           <div class="combatant player-side" id="playerCombatant"></div>
           <div class="versus-line" aria-hidden="true"></div>
           <div class="combatant enemy-side" id="enemyCombatant"></div>
+          <div class="battle-flash" id="battleFlash" aria-hidden="true"></div>
         </div>
         <div class="battle-console">
           <div class="battle-log" id="battleLog" role="status" aria-live="polite"></div>
@@ -134,10 +144,27 @@
     <section class="modal-layer" id="editionModal">
       <div class="modal edition-modal">
         <div class="modal-header">
-          <p>PokeG Version 2</p>
+          <p>PokeG Version 3</p>
           <h2>Choose your edition</h2>
         </div>
         <div class="edition-grid" id="editionGrid"></div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="introModal" hidden>
+      <div class="modal intro-modal">
+        <div class="modal-header">
+          <p id="introKicker">Professor Maple</p>
+          <h2 id="introTitle">Welcome to the Grand Circuit</h2>
+        </div>
+        <div class="intro-layout">
+          <div class="intro-scene" id="introScene" aria-hidden="true"></div>
+          <p id="introText"></p>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="introSkipButton">Skip</button>
+          <button type="button" id="introNextButton">Next</button>
+        </div>
       </div>
     </section>
 
@@ -148,6 +175,37 @@
           <h2 id="starterHeadline">Choose your first partner</h2>
         </div>
         <div class="starter-grid" id="starterGrid"></div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="mapModal" hidden>
+      <div class="modal map-modal">
+        <div class="modal-header">
+          <p>Region Map</p>
+          <h2>Grand Circuit</h2>
+        </div>
+        <div id="regionMapModal"></div>
+        <div class="modal-actions">
+          <button type="button" id="mapCloseButton">Close</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="interiorModal" hidden>
+      <div class="modal interior-modal">
+        <div class="modal-header">
+          <p id="interiorKicker">Interior</p>
+          <h2 id="interiorTitle">Building</h2>
+        </div>
+        <div class="interior-layout">
+          <div class="interior-scene" id="interiorScene" aria-hidden="true"></div>
+          <p id="interiorText"></p>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="interiorPrimaryButton">Action</button>
+          <button type="button" id="interiorSecondaryButton">Second</button>
+          <button type="button" id="interiorExitButton">Exit</button>
+        </div>
       </div>
     </section>
 
