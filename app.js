@@ -1,7 +1,10 @@
 (() => {
   "use strict";
 
-  const SAVE_KEY = "pokeg-grand-region-v3";
+  const SAVE_PREFIX = "pokeg-grand-region-v4";
+  const PROFILE_KEY = `${SAVE_PREFIX}-active-profile`;
+  const PROFILE_IDS = ["slot1", "slot2", "slot3"];
+  let activeProfileId = localStorage.getItem(PROFILE_KEY) || "slot1";
   const SPRITE_BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
   const ANIMATED_BASE = `${SPRITE_BASE}/versions/generation-v/black-white/animated`;
   const WORLD = { width: 96, height: 72, tile: 32 };
@@ -24,12 +27,22 @@
     questText: document.getElementById("questText"),
     toast: document.getElementById("toast"),
     partyPanel: document.getElementById("partyPanel"),
+    pcPanel: document.getElementById("pcPanel"),
     bagPanel: document.getElementById("bagPanel"),
     mapPanel: document.getElementById("mapPanel"),
     dexPanel: document.getElementById("dexPanel"),
     logPanel: document.getElementById("logPanel"),
     editionModal: document.getElementById("editionModal"),
     editionGrid: document.getElementById("editionGrid"),
+    profileModal: document.getElementById("profileModal"),
+    profileGrid: document.getElementById("profileGrid"),
+    profileCloseButton: document.getElementById("profileCloseButton"),
+    summaryModal: document.getElementById("summaryModal"),
+    summaryKicker: document.getElementById("summaryKicker"),
+    summaryTitle: document.getElementById("summaryTitle"),
+    summaryBody: document.getElementById("summaryBody"),
+    summaryNicknameButton: document.getElementById("summaryNicknameButton"),
+    summaryCloseButton: document.getElementById("summaryCloseButton"),
     introModal: document.getElementById("introModal"),
     introKicker: document.getElementById("introKicker"),
     introTitle: document.getElementById("introTitle"),
@@ -76,6 +89,7 @@
     switchButton: document.getElementById("switchButton"),
     fleeButton: document.getElementById("fleeButton"),
     switchPanel: document.getElementById("switchPanel"),
+    profileButton: document.getElementById("profileButton"),
     mapButton: document.getElementById("mapButton"),
     journalButton: document.getElementById("journalButton"),
     healButton: document.getElementById("healButton"),
@@ -115,14 +129,14 @@
     "flame-wheel": { name: "Flame Wheel", type: "fire", power: 60, accuracy: 100 },
     "fire-spin": { name: "Fire Spin", type: "fire", power: 45, accuracy: 85 },
     "thunder-shock": { name: "Thunder Shock", type: "electric", power: 40, accuracy: 100 },
-    spark: { name: "Spark", type: "electric", power: 65, accuracy: 100 },
-    "thunderbolt": { name: "Thunderbolt", type: "electric", power: 90, accuracy: 100 },
+    spark: { name: "Spark", type: "electric", power: 65, accuracy: 100, status: "paralyzed", statusChance: 0.18 },
+    "thunderbolt": { name: "Thunderbolt", type: "electric", power: 90, accuracy: 100, status: "paralyzed", statusChance: 0.16 },
     gust: { name: "Gust", type: "flying", power: 40, accuracy: 100 },
     "wing-attack": { name: "Wing Attack", type: "flying", power: 60, accuracy: 100 },
     peck: { name: "Peck", type: "flying", power: 35, accuracy: 100 },
     "bug-bite": { name: "Bug Bite", type: "bug", power: 60, accuracy: 100 },
-    "poison-sting": { name: "Poison Sting", type: "poison", power: 30, accuracy: 100 },
-    acid: { name: "Acid", type: "poison", power: 40, accuracy: 100 },
+    "poison-sting": { name: "Poison Sting", type: "poison", power: 30, accuracy: 100, status: "poisoned", statusChance: 0.28 },
+    acid: { name: "Acid", type: "poison", power: 40, accuracy: 100, status: "poisoned", statusChance: 0.16 },
     dig: { name: "Dig", type: "ground", power: 80, accuracy: 100 },
     "mud-slap": { name: "Mud Slap", type: "ground", power: 35, accuracy: 100 },
     "rock-throw": { name: "Rock Throw", type: "rock", power: 50, accuracy: 90 },
@@ -262,6 +276,16 @@
     "iron-head": { name: "Iron Head", type: "steel", power: 80, accuracy: 100 }
   });
 
+  Object.assign(MOVES, {
+    ember: { ...MOVES.ember, status: "burned", statusChance: 0.16 },
+    "flame-wheel": { ...MOVES["flame-wheel"], status: "burned", statusChance: 0.18 },
+    "fire-spin": { ...MOVES["fire-spin"], status: "burned", statusChance: 0.12 },
+    "ice-shard": { ...MOVES["ice-shard"], status: "frosted", statusChance: 0.14 },
+    aurora: { ...MOVES.aurora, status: "frosted", statusChance: 0.18 },
+    bite: { ...MOVES.bite, effect: "flinch" },
+    crunch: { ...MOVES.crunch, effect: "defenseDown" }
+  });
+
   const SPECIES = new Map(POKEDEX.map((pokemon) => [pokemon.id, pokemon]));
   const STARTERS = [1, 4, 7, 25];
   const TYPE_CHART = {
@@ -370,6 +394,90 @@
     { cityId: "thornmere", kind: "mist-well", x: 15, y: 39, color: "#8e55b7" },
     { cityId: "astral", kind: "observatory", x: 48, y: 29, color: "#dc5c94" }
   ];
+
+  const TILEMAP_LAYERS = {
+    terrain: [
+      { tile: "plaza", x: 10, y: 8, w: 5, h: 5 },
+      { tile: "plaza", x: 34, y: 8, w: 5, h: 5 },
+      { tile: "plaza", x: 60, y: 10, w: 5, h: 5 },
+      { tile: "pier", x: 84, y: 17, w: 7, h: 3 },
+      { tile: "ash", x: 73, y: 31, w: 14, h: 5 },
+      { tile: "snow", x: 48, y: 47, w: 18, h: 7 },
+      { tile: "neon", x: 25, y: 47, w: 14, h: 5 },
+      { tile: "mist", x: 5, y: 33, w: 20, h: 8 },
+      { tile: "star", x: 38, y: 23, w: 20, h: 8 },
+      { tile: "royal", x: 67, y: 53, w: 18, h: 5 }
+    ],
+    collision: [
+      { x: 90, y: 35, w: 4, h: 21, reason: "Deep water blocks the east bank." },
+      { x: 44, y: 20, w: 5, h: 5, reason: "A cave wall rises here." },
+      { x: 17, y: 27, w: 4, h: 3, reason: "The lake edge is too slick." }
+    ],
+    events: [
+      { id: "rare-grove", x: 18, y: 35, w: 3, h: 3, type: "rare", text: "A hidden grove rustles with unusually rare partners." },
+      { id: "postgame-signal", x: 75, y: 57, w: 3, h: 3, type: "postgame", text: "The restored Crown antenna points toward a future legendary signal." }
+    ]
+  };
+
+  const SIDE_QUESTS = [
+    {
+      id: "lost-satchel",
+      title: "Lost Satchel",
+      cityId: "lumen",
+      giver: "Lumen Resident",
+      start: "A resident lost a satchel near Sunpetal Route.",
+      complete: "Returned the Lumen satchel.",
+      reward: { money: 180, balls: 2 }
+    },
+    {
+      id: "harbor-lantern",
+      title: "Harbor Lantern",
+      cityId: "harbor",
+      giver: "Harbor Keeper",
+      minBadges: 3,
+      start: "The lighthouse needs a charged lantern from Neon Heights.",
+      complete: "Harbor's lantern is glowing again.",
+      reward: { money: 360, potions: 2 }
+    },
+    {
+      id: "frost-medicine",
+      title: "Frost Medicine",
+      cityId: "frostvale",
+      giver: "Frostvale Nurse",
+      minBadges: 5,
+      start: "Frostvale needs berries from Thornmere's mist gardens.",
+      complete: "Delivered medicine supplies to Frostvale.",
+      reward: { berries: 4, money: 420 }
+    },
+    {
+      id: "astral-pages",
+      title: "Astral Pages",
+      cityId: "astral",
+      giver: "Archivist Rue",
+      minBadges: 7,
+      start: "Three observatory pages are scattered across the circuit.",
+      complete: "Recovered Astral's missing observatory pages.",
+      reward: { balls: 4, money: 700 }
+    }
+  ];
+
+  const NPC_SCRIPTS = {
+    professor: [
+      { when: (s) => !s.flags.mapleGift, action: "gift" },
+      { when: (s) => s.badges.length >= 8 && !s.flags.story.professorFinal, text: "The whole circuit is reading clean again. Crown Station changed because you kept going.", set: "professorFinal" },
+      { text: "Keep logging city signals. Every badge and side quest makes the map smarter." }
+    ],
+    captain: [
+      { when: (s) => !s.flags.trainers["umbra-quarry"], text: "Umbra boats keep cutting their lights near Saltwind Coast. Clear the cable road and I can track them." },
+      { text: "The harbor is listening again. Badges are not just trophies here; they are infrastructure." }
+    ],
+    mechanic: [
+      { when: (s) => s.badges.length < 6, text: "Neon Heights runs on gym power. Bring more badges and the west road wakes up." },
+      { text: "Every neon transformer is singing. That is what progress sounds like." }
+    ]
+  };
+
+  const WEATHER_TYPES = ["clear", "rain", "wind", "spark", "mist", "snow"];
 
   const ROUTE_NAMES = Object.fromEntries([
     ...CITY_DEFS.map((city) => [city.id, city.name]),
@@ -978,8 +1086,10 @@
   let playerMotion = null;
   let trainerApproach = null;
   let currentInterior = null;
+  let summaryTarget = null;
   let introStep = 0;
   let battleFxTimer = 0;
+  let playStartedAt = Date.now();
   const footstepEffects = [];
   let lastMoveAt = 0;
   let toastTimer = 0;
@@ -989,6 +1099,7 @@
     const selectedEdition = editionId && EDITIONS[editionId] ? editionId : null;
     return {
       version: 3,
+      profileId: activeProfileId,
       edition: selectedEdition,
       trainer: { name: "Rookie" },
       player: { x: 12, y: 12, dir: "down", steps: 0 },
@@ -1000,7 +1111,9 @@
       badges: [],
       dexSeen: [],
       dexCaught: [],
-      flags: { mapleGift: false, trainers: {}, story: {} },
+      flags: { mapleGift: false, trainers: {}, story: {}, quests: {}, scripts: {}, cutscenes: {} },
+      world: { day: 1, weather: "clear", weatherSeed: randomInt(1, 9999), discovered: ["lumen", "bracken"], postgame: false },
+      playtime: 0,
       log: [],
       battle: null,
       dialog: null,
@@ -1014,6 +1127,7 @@
     const base = freshState(selectedEdition);
     const merged = { ...base, ...save };
     merged.version = 3;
+    merged.profileId = save.profileId || activeProfileId;
     merged.edition = selectedEdition;
     merged.trainer = { ...base.trainer, ...(save.trainer || {}) };
     merged.player = { ...base.player, ...(save.player || {}) };
@@ -1021,6 +1135,11 @@
     merged.flags = { ...base.flags, ...(save.flags || {}) };
     merged.flags.trainers = { ...(save.flags && save.flags.trainers ? save.flags.trainers : {}) };
     merged.flags.story = { ...(save.flags && save.flags.story ? save.flags.story : {}) };
+    merged.flags.quests = { ...(save.flags && save.flags.quests ? save.flags.quests : {}) };
+    merged.flags.scripts = { ...(save.flags && save.flags.scripts ? save.flags.scripts : {}) };
+    merged.flags.cutscenes = { ...(save.flags && save.flags.cutscenes ? save.flags.cutscenes : {}) };
+    merged.world = { ...base.world, ...(save.world || {}) };
+    merged.playtime = Math.max(0, save.playtime || 0);
     merged.party = Array.isArray(save.party) ? save.party.map(revivePokemon).filter(Boolean) : [];
     merged.pc = Array.isArray(save.pc) ? save.pc.map(revivePokemon).filter(Boolean) : [];
     merged.dexSeen = uniqueNumbers(save.dexSeen || []);
@@ -1046,6 +1165,9 @@
       maxHp: raw.maxHp || 1,
       stats: raw.stats || {},
       moves: Array.isArray(raw.moves) ? raw.moves.filter((move) => MOVES[move]).slice(0, 4) : [],
+      status: raw.status || "",
+      caughtAt: raw.caughtAt || "Unknown",
+      ability: raw.ability || abilityFor(raw.speciesId),
       stages: { attack: 0, defense: 0, speed: 0 }
     };
     if (!pokemon.moves.length) pokemon.moves = movesForLevel(pokemon.speciesId, pokemon.level);
@@ -1054,8 +1176,11 @@
   }
 
   function boot() {
+    activeProfileId = PROFILE_IDS.includes(activeProfileId) ? activeProfileId : "slot1";
+    playStartedAt = Date.now();
     renderEditions();
     renderStarters();
+    renderProfiles();
     const saved = loadGame();
     if (saved && saved.party.length) {
       state = saved;
@@ -1082,7 +1207,7 @@
 
   function loadGame() {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      const raw = localStorage.getItem(currentSaveKey());
       if (!raw) return null;
       return normalizeState(JSON.parse(raw));
     } catch (error) {
@@ -1101,20 +1226,46 @@
   }
 
   function saveGame(manual = false) {
+    state.playtime += Math.floor((Date.now() - playStartedAt) / 1000);
+    playStartedAt = Date.now();
     const snapshot = {
       ...state,
+      profileId: activeProfileId,
       battle: null,
       dialog: null,
       menuOpen: false,
       party: state.party.map(cleanPokemonForSave),
       pc: state.pc.map(cleanPokemonForSave)
     };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot));
+    localStorage.setItem(currentSaveKey(), JSON.stringify(snapshot));
+    localStorage.setItem(PROFILE_KEY, activeProfileId);
     if (manual) {
       pushLog("Game saved.");
       showDialog("Save", "Game saved.");
       tone(740, 0.055, "triangle");
       tone(980, 0.07, "triangle", 0.045);
+    }
+  }
+
+  function currentSaveKey(profileId = activeProfileId) {
+    return `${SAVE_PREFIX}-${profileId}`;
+  }
+
+  function profileSummary(profileId) {
+    try {
+      const raw = localStorage.getItem(currentSaveKey(profileId));
+      if (!raw) return null;
+      const save = JSON.parse(raw);
+      const starter = Array.isArray(save.party) && save.party[0] ? save.party[0].name : "No partner";
+      return {
+        edition: save.edition ? getEdition(save.edition).shortName : "No edition",
+        starter,
+        badges: Array.isArray(save.badges) ? save.badges.length : 0,
+        route: save.player ? routeNameForPoint(save.player.x, save.player.y) : "New file",
+        playtime: save.playtime || 0
+      };
+    } catch (error) {
+      return null;
     }
   }
 
@@ -1222,6 +1373,7 @@
 
   function renderSidePanels() {
     renderParty();
+    renderPc();
     renderBag();
     renderMapPanel();
     renderDex();
@@ -1321,15 +1473,56 @@
             <strong>${escapeHtml(pokemon.name)}</strong>
             <span>Lv ${pokemon.level}</span>
           </div>
-          ${typeStrip(typesOf(pokemon))}
-          <div class="stat-line"><span>HP</span><span>${pokemon.hp}/${pokemon.maxHp}</span></div>
+      ${typeStrip(typesOf(pokemon))}
+      ${pokemon.status ? `<div class="status-chip">${pokemon.status}</div>` : ""}
+      <div class="stat-line"><span>HP</span><span>${pokemon.hp}/${pokemon.maxHp}</span></div>
           <div class="hp-track"><div class="hp-fill ${hp < 34 ? "low" : ""}" style="width:${hp}%"></div></div>
           <div class="stat-line"><span>XP</span><span>${pokemon.xp}/${xpNeeded(pokemon.level)}</span></div>
           <div class="xp-track"><div class="xp-fill" style="width:${xp}%"></div></div>
           <div class="party-actions">
             <button class="party-action" type="button" data-lead="${index}" ${pokemon.hp <= 0 ? "disabled" : ""}>Lead</button>
+            <button class="party-action" type="button" data-summary-party="${index}">Summary</button>
+            <button class="party-action" type="button" data-deposit="${index}" ${state.party.length <= 1 ? "disabled" : ""}>Deposit</button>
             <button class="party-action" type="button" data-party-potion="${index}" ${state.bag.potions <= 0 || pokemon.hp >= pokemon.maxHp ? "disabled" : ""}>Potion</button>
             <button class="party-action" type="button" data-party-berry="${index}" ${state.bag.berries <= 0 || pokemon.hp >= pokemon.maxHp ? "disabled" : ""}>Berry</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderPc() {
+    const pcCount = state.pc.length;
+    const partySpace = Math.max(0, 6 - state.party.length);
+    if (!state.party.length) {
+      els.pcPanel.innerHTML = `<div class="empty-state">Choose a partner before opening storage.</div>`;
+      return;
+    }
+    els.pcPanel.innerHTML = `
+      <div class="pc-summary">
+        <strong>Billboard PC</strong>
+        <span>${pcCount} stored - ${partySpace} party slot${partySpace === 1 ? "" : "s"} open</span>
+      </div>
+      <div class="party-list">
+        ${state.pc.length ? state.pc.map((pokemon, index) => pcCard(pokemon, index)).join("") : `<div class="empty-state">No stored partners yet.</div>`}
+      </div>
+    `;
+  }
+
+  function pcCard(pokemon, index) {
+    return `
+      <article class="party-card pc-card">
+        ${spriteBox(pokemon, "front")}
+        <div class="party-body">
+          <div class="party-line">
+            <strong>${escapeHtml(pokemon.name)}</strong>
+            <span>Lv ${pokemon.level}</span>
+          </div>
+          ${typeStrip(typesOf(pokemon))}
+          <div class="stat-line"><span>${pokemon.caughtAt || "Unknown"}</span><span>${pokemon.ability || "Steady"}</span></div>
+          <div class="party-actions">
+            <button class="party-action" type="button" data-summary-pc="${index}">Summary</button>
+            <button class="party-action" type="button" data-withdraw="${index}" ${state.party.length >= 6 ? "disabled" : ""}>Withdraw</button>
           </div>
         </div>
       </article>
@@ -1392,6 +1585,10 @@
         <span>${entry.text}</span>
       </div>
     `).join("");
+    const sideRows = SIDE_QUESTS.map((quest) => {
+      const status = questStatus(quest);
+      return `<span class="${status === "complete" ? "is-done" : status === "active" ? "is-active" : ""}">${quest.title}</span>`;
+    }).join("");
     const gymRows = GYM_DEFS.map((gym) => {
       const done = state.badges.includes(gym.badge);
       return `<span class="${done ? "is-done" : ""}">${gym.rank}. ${gym.badge}</span>`;
@@ -1411,6 +1608,8 @@
         <div>${gymRows}</div>
         <strong>Team Umbra</strong>
         <div>${umbraRows}</div>
+        <strong>Side Quests</strong>
+        <div>${sideRows}</div>
       </div>
       <div class="event-log">
         ${state.log.length ? state.log.slice(0, 24).map((entry) => `<div class="log-row"><span>${escapeHtml(entry)}</span></div>`).join("") : `<div class="empty-state">No field notes yet.</div>`}
@@ -1458,6 +1657,34 @@
     if (!state.flags.trainers["rival-astral"]) return "Meet Jules under Astral City's observatory lights.";
     if (!state.flags.trainers["rival-crown"]) return "Find Jules at Crown Gate after the Umbra finale.";
     return "Jules is ready for the league chapter.";
+  }
+
+  function questStatus(quest) {
+    return state.flags.quests[quest.id] || "locked";
+  }
+
+  function advanceSideQuest(cityId) {
+    const quest = SIDE_QUESTS.find((entry) => entry.cityId === cityId && state.badges.length >= (entry.minBadges || 0) && questStatus(entry) !== "complete");
+    if (!quest) return "";
+    const status = questStatus(quest);
+    if (status === "locked") {
+      state.flags.quests[quest.id] = "active";
+      pushLog(`${quest.title} started.`);
+      saveGame(false);
+      return `${quest.giver}: ${quest.start}`;
+    }
+    state.flags.quests[quest.id] = "complete";
+    applyQuestReward(quest.reward || {});
+    pushLog(`${quest.title} complete.`);
+    saveGame(false);
+    return `${quest.giver}: ${quest.complete}`;
+  }
+
+  function applyQuestReward(reward) {
+    state.money += reward.money || 0;
+    state.bag.balls += reward.balls || 0;
+    state.bag.potions += reward.potions || 0;
+    state.bag.berries += reward.berries || 0;
   }
 
   function renderDialog() {
@@ -1512,6 +1739,63 @@
         </div>
       </button>
     `).join("");
+  }
+
+  function renderProfiles() {
+    els.profileGrid.innerHTML = PROFILE_IDS.map((profileId, index) => {
+      const summary = profileSummary(profileId);
+      const active = profileId === activeProfileId;
+      return `
+        <article class="profile-card ${active ? "is-active" : ""}">
+          <div>
+            <strong>File ${index + 1}</strong>
+            <span>${active ? "Active" : "Save slot"}</span>
+          </div>
+          <p>${summary ? `${summary.edition} - ${summary.starter}` : "Empty file"}</p>
+          <div class="profile-meta">
+            <span>${summary ? `${summary.badges}/${GYM_DEFS.length} badges` : "0 badges"}</span>
+            <span>${summary ? summary.route : "New journey"}</span>
+            <span>${summary ? formatPlaytime(summary.playtime) : "00:00"}</span>
+          </div>
+          <div class="profile-actions">
+            <button type="button" data-profile-load="${profileId}">${summary ? "Load" : "Start"}</button>
+            <button type="button" data-profile-clear="${profileId}" ${summary ? "" : "disabled"}>Clear</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function openProfiles() {
+    renderProfiles();
+    els.profileModal.hidden = false;
+    tone(392, 0.05, "triangle");
+  }
+
+  function switchProfile(profileId) {
+    if (!PROFILE_IDS.includes(profileId)) return;
+    if (state.party.length) saveGame(false);
+    activeProfileId = profileId;
+    localStorage.setItem(PROFILE_KEY, activeProfileId);
+    const saved = loadGame();
+    if (saved && saved.party.length) {
+      state = saved;
+      ensurePlayerInUnlockedArea();
+      applyEditionTheme();
+      els.editionModal.hidden = true;
+      els.introModal.hidden = true;
+      els.starterModal.hidden = true;
+    } else {
+      state = freshState();
+      applyEditionTheme("ember");
+      els.editionModal.hidden = false;
+      els.introModal.hidden = true;
+      els.starterModal.hidden = true;
+    }
+    els.profileModal.hidden = true;
+    renderProfiles();
+    renderAll();
+    showToast(`File ${PROFILE_IDS.indexOf(profileId) + 1} loaded.`);
   }
 
   function renderStarters() {
@@ -1594,6 +1878,7 @@
   }
 
   function drawWorld(time = 0) {
+    updateWorldSimulation(time);
     settlePlayerMotion(time);
     updateCamera(time);
     ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
@@ -1609,6 +1894,7 @@
       }
     }
     drawRegionDetails(time);
+    drawWeatherOverlay(time);
     drawLandmarks(time);
     drawGates(time);
     drawFootstepEffects(time);
@@ -1630,6 +1916,23 @@
     const targetY = player.y * WORLD.tile + WORLD.tile / 2 - els.canvas.height / 2;
     camera.x = clamp(targetX, 0, Math.max(0, WORLD.width * WORLD.tile - els.canvas.width));
     camera.y = clamp(targetY, 0, Math.max(0, WORLD.height * WORLD.tile - els.canvas.height));
+  }
+
+  function updateWorldSimulation(time) {
+    if (!state.party.length) return;
+    const day = Math.max(1, Math.floor(state.player.steps / 96) + 1);
+    if (day !== state.world.day) {
+      state.world.day = day;
+      state.world.weather = WEATHER_TYPES[(state.world.weatherSeed + day + state.badges.length) % WEATHER_TYPES.length];
+      pushLog(`Day ${day}: ${state.world.weather} weather rolled across the circuit.`);
+      saveGame(false);
+    }
+    if (state.badges.length >= GYM_DEFS.length && state.flags.trainers["umbra-boss"]) state.world.postgame = true;
+  }
+
+  function timeOfDay() {
+    const phase = Math.floor((state.player.steps % 96) / 24);
+    return ["morning", "day", "evening", "night"][phase] || "day";
   }
 
   function settlePlayerMotion(time) {
@@ -1660,6 +1963,14 @@
       tallgrass: h % 2 === 0 ? palette.tallgrass[0] : palette.tallgrass[1],
       path: h % 2 === 0 ? palette.path[0] : palette.path[1],
       city: cityAt(x, y) ? cityAt(x, y).color : "#d8c99d",
+      plaza: "#d7c899",
+      pier: "#9b7653",
+      ash: "#9a8177",
+      snow: "#dbeff1",
+      neon: "#bdb6e4",
+      mist: "#9dbb8f",
+      star: "#c9b6d8",
+      royal: "#c8bddf",
       water: palette.water,
       tree: palette.tree[0],
       rock: palette.rock
@@ -1671,6 +1982,10 @@
       ctx.fillStyle = "rgba(255,255,255,0.13)";
       ctx.fillRect(px + 6, py + 12, 6, 4);
       ctx.fillRect(px + 20, py + 22, 7, 3);
+    }
+
+    if (["plaza", "pier", "ash", "snow", "neon", "mist", "star", "royal"].includes(baseTile)) {
+      drawAuthoredTileDetail(px, py, baseTile, h, time);
     }
 
     if (baseTile === "city") {
@@ -1727,6 +2042,65 @@
       ctx.fill();
       ctx.fillStyle = "rgba(255,255,255,0.16)";
       ctx.fillRect(px + 14, py + 11, 8, 3);
+    }
+  }
+
+  function drawAuthoredTileDetail(px, py, tile, h, time) {
+    if (tile === "plaza" || tile === "royal") {
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(px + 2, py + 2, 28, 2);
+      ctx.fillRect(px + 2, py + 16, 28, 2);
+      ctx.fillStyle = "rgba(23,33,29,0.08)";
+      ctx.fillRect(px + 15, py, 2, 32);
+    }
+    if (tile === "pier") {
+      ctx.fillStyle = "rgba(70,45,28,0.28)";
+      for (let i = 0; i < 4; i += 1) ctx.fillRect(px + i * 8, py, 3, 32);
+    }
+    if (tile === "ash" || tile === "snow" || tile === "mist") {
+      ctx.fillStyle = `rgba(255,255,255,${tile === "ash" ? 0.12 : 0.34})`;
+      ctx.beginPath();
+      ctx.arc(px + 7 + (h % 18), py + 6 + ((h >> 3) % 18), 2 + (h % 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (tile === "neon") {
+      ctx.fillStyle = `rgba(241,200,75,${0.28 + Math.sin(time / 250 + h) * 0.14})`;
+      ctx.fillRect(px + 4, py + 13, 24, 4);
+      ctx.fillRect(px + 14, py + 4, 4, 24);
+    }
+    if (tile === "star") {
+      ctx.fillStyle = `rgba(255,253,246,${0.32 + Math.sin(time / 360 + h) * 0.12})`;
+      ctx.fillRect(px + 15, py + 5, 2, 12);
+      ctx.fillRect(px + 10, py + 10, 12, 2);
+    }
+  }
+
+  function drawWeatherOverlay(time) {
+    if (!state.party.length) return;
+    const weather = state.world.weather || "clear";
+    const phase = timeOfDay();
+    if (phase === "evening" || phase === "night") {
+      ctx.fillStyle = phase === "night" ? "rgba(22, 24, 48, 0.24)" : "rgba(239, 112, 75, 0.08)";
+      ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
+    }
+    if (weather === "clear") return;
+    ctx.strokeStyle = weather === "rain" ? "rgba(220,245,255,0.48)" : weather === "snow" ? "rgba(255,255,255,0.72)" : "rgba(255,253,246,0.24)";
+    ctx.fillStyle = ctx.strokeStyle;
+    for (let i = 0; i < 34; i += 1) {
+      const x = (i * 73 + Math.floor(time / 18)) % els.canvas.width;
+      const y = (i * 41 + Math.floor(time / 28)) % els.canvas.height;
+      if (weather === "rain") {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - 5, y + 14);
+        ctx.stroke();
+      } else if (weather === "spark") {
+        if (i % 10 === 0) ctx.fillRect(x, y, 10, 2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(x, y, weather === "snow" ? 2.2 : 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 
@@ -2055,6 +2429,8 @@
 
   function tileAt(x, y) {
     if (x < 0 || y < 0 || x >= WORLD.width || y >= WORLD.height) return "tree";
+    const authored = authoredTileAt(x, y);
+    if (authored) return authored;
     if (isBuildingCell(x, y)) return "building";
     if (x === 0 || y === 0 || x === WORLD.width - 1 || y === WORLD.height - 1) return "tree";
     if (isPath(x, y)) return "path";
@@ -2064,6 +2440,17 @@
     if (isTreeCluster(x, y)) return "tree";
     if (isTallGrass(x, y)) return "tallgrass";
     return "meadow";
+  }
+
+  function authoredTileAt(x, y) {
+    const collision = TILEMAP_LAYERS.collision.find((rect) => rectContains(rect, x, y));
+    if (collision) return "rock";
+    const terrain = TILEMAP_LAYERS.terrain.find((rect) => rectContains(rect, x, y));
+    return terrain ? terrain.tile : "";
+  }
+
+  function authoredEventAt(x, y) {
+    return TILEMAP_LAYERS.events.find((rect) => rectContains(rect, x, y));
   }
 
   function isPath(x, y) {
@@ -2193,6 +2580,21 @@
     return ROUTE_NAMES[routeKey()] || ROUTE_NAMES.road;
   }
 
+  function routeNameForPoint(x, y) {
+    const city = cityAt(x, y);
+    if (city) return city.name;
+    const zone = zoneAt(x, y);
+    if (zone) return zone.name;
+    return ROUTE_NAMES.road;
+  }
+
+  function discoverCurrentCity() {
+    const city = cityAt(state.player.x, state.player.y);
+    if (!city || state.world.discovered.includes(city.id)) return;
+    state.world.discovered.push(city.id);
+    pushLog(`${city.name} added to your region map.`);
+  }
+
   function encounterArea() {
     const zone = zoneAt(state.player.x, state.player.y);
     return zone ? zone.encounter : "meadow";
@@ -2265,6 +2667,13 @@
     state.player.x = nextX;
     state.player.y = nextY;
     state.player.steps += 1;
+    const event = authoredEventAt(nextX, nextY);
+    if (event && !state.flags.scripts[event.id]) {
+      state.flags.scripts[event.id] = true;
+      showToast(event.text);
+      pushLog(event.text);
+    }
+    discoverCurrentCity();
     if (state.player.steps % 8 === 0) saveGame(false);
     renderTopline();
   }
@@ -2347,7 +2756,7 @@
 
   function chooseWildPokemon(area) {
     const encounters = getEdition().encounters;
-    const table = encounters[area] || encounters.meadow;
+    const table = encounterTableFor(area, encounters);
     const total = table.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * total;
     let chosen = table[0];
@@ -2362,6 +2771,17 @@
     const min = Math.max(2, Math.min(chosen.max, Math.floor(avg - 3), chosen.min));
     const max = Math.max(min, Math.min(chosen.max + Math.floor(avg / 8), Math.ceil(avg + 2)));
     return createPokemon(chosen.id, randomInt(min, max));
+  }
+
+  function encounterTableFor(area, encounters) {
+    const table = [...(encounters[area] || encounters.meadow)];
+    const weather = state.world.weather || "clear";
+    if (weather === "rain" && area === "coast") table.push({ id: 147, weight: 2, min: 12, max: 18 });
+    if (weather === "mist" && area === "orchard") table.push({ id: 92, weight: 8, min: 12, max: 20 });
+    if (weather === "spark" && area === "meadow") table.push({ id: 25, weight: 8, min: 8, max: 16 });
+    if (timeOfDay() === "night") table.push({ id: 41, weight: 5, min: 6, max: 18 });
+    if (state.world.postgame) table.push({ id: 143, weight: 1, min: 42, max: 48 });
+    return table;
   }
 
   function interact() {
@@ -2382,6 +2802,7 @@
   }
 
   function interactNpc(npc) {
+    if (runNpcScript(npc)) return;
     if (npc.action === "heal") {
       healParty(true);
       return;
@@ -2397,6 +2818,20 @@
     if (npc.action === "talk") {
       showDialog(npc.name, npc.text || "Keep your party healed and your eyes open.");
     }
+  }
+
+  function runNpcScript(npc) {
+    const script = NPC_SCRIPTS[npc.id];
+    if (!script) return false;
+    const step = script.find((entry) => !entry.when || entry.when(state));
+    if (!step) return false;
+    if (step.action === "gift") {
+      professorGift();
+      return true;
+    }
+    if (step.set) state.flags.story[step.set] = true;
+    showDialog(npc.name, step.text);
+    return true;
   }
 
   function buildingAt(x, y) {
@@ -2434,6 +2869,7 @@
     const nurse = getEdition().npcs.nurse.name;
     state.party.forEach((pokemon) => {
       pokemon.hp = pokemon.maxHp;
+      pokemon.status = "";
       pokemon.stages = { attack: 0, defense: 0, speed: 0 };
     });
     state.activeIndex = firstAliveIndex();
@@ -2499,7 +2935,8 @@
     else if (building.kind === "league") leagueDesk();
     else {
       const city = cityById(building.cityId);
-      showDialog(city ? `${city.name} Resident` : "Resident", localHouseLine(building.cityId));
+      const questLine = advanceSideQuest(building.cityId);
+      showDialog(city ? `${city.name} Resident` : "Resident", questLine || localHouseLine(building.cityId));
     }
   }
 
@@ -2623,6 +3060,7 @@
       badgeText: trainer.badgeText || getEdition().badgeText,
       enemies: team,
       enemyIndex: 0,
+      trainerItems: trainer.gymRank || trainer.story ? 1 : 0,
       log: [trainer.intro],
       locked: false,
       ended: false,
@@ -2767,7 +3205,7 @@
       <div class="combat-card">
         <div class="party-line">
           <strong>${escapeHtml(pokemon.name)}</strong>
-          <span>Lv ${pokemon.level}</span>
+          <span>Lv ${pokemon.level}${pokemon.status ? ` / ${pokemon.status}` : ""}</span>
         </div>
         ${typeStrip(types)}
         <div class="stat-line"><span>HP</span><span>${pokemon.hp}/${pokemon.maxHp}</span></div>
@@ -2788,6 +3226,15 @@
     const enemyMove = chooseMove(enemy, player);
     const playerMove = MOVES[key];
     const foeMove = MOVES[enemyMove];
+    if (!canActThisTurn(player, battle.log)) {
+      battle.locked = true;
+      battle.log.push(`${player.name} is slowed by ${player.status}.`);
+      battle.log.push(`${enemy.name} used ${foeMove.name}.`);
+      battle.log.push(...performAttack(enemy, player, enemyMove));
+      battle.log.push(...applyEndTurnEffects());
+      handlePlayerAfterHit();
+      return;
+    }
     const playerFirst = (playerMove.priority || 0) > (foeMove.priority || 0) ||
       ((playerMove.priority || 0) === (foeMove.priority || 0) && effectiveStat(player, "speed") >= effectiveStat(enemy, "speed"));
     battle.locked = true;
@@ -2799,6 +3246,12 @@
     const battle = state.battle;
     const player = activePokemon();
     const enemy = battleEnemy();
+    if (battle.kind === "trainer" && maybeTrainerUseItem(enemy, battle.log)) {
+      battle.log.push(...applyEndTurnEffects());
+      battle.locked = false;
+      renderAfterBattleAction();
+      return;
+    }
     if (playerFirst) {
       battle.log.push(...performAttack(player, enemy, playerMove));
       if (enemy.hp <= 0) {
@@ -2806,12 +3259,24 @@
         return;
       }
       battle.log.push(`${enemy.name} used ${MOVES[enemyMove].name}.`);
+      if (!canActThisTurn(enemy, battle.log)) {
+        battle.log.push(`${enemy.name} is slowed by ${enemy.status}.`);
+        battle.log.push(...applyEndTurnEffects());
+        battle.locked = false;
+        renderAfterBattleAction();
+        return;
+      }
       battle.log.push(...performAttack(enemy, player, enemyMove));
+      battle.log.push(...applyEndTurnEffects());
       handlePlayerAfterHit();
       return;
     }
     battle.log.push(`${enemy.name} used ${MOVES[enemyMove].name}.`);
-    battle.log.push(...performAttack(enemy, player, enemyMove));
+    if (!canActThisTurn(enemy, battle.log)) {
+      battle.log.push(`${enemy.name} is slowed by ${enemy.status}.`);
+    } else {
+      battle.log.push(...performAttack(enemy, player, enemyMove));
+    }
     if (player.hp <= 0) {
       handlePlayerAfterHit();
       return;
@@ -2821,6 +3286,7 @@
       handleEnemyFainted();
       return;
     }
+    battle.log.push(...applyEndTurnEffects());
     battle.locked = false;
     renderAfterBattleAction();
   }
@@ -2836,12 +3302,13 @@
       lines.push(...applyStatusMove(attacker, defender, move));
       return lines;
     }
-    const attack = effectiveStat(attacker, "attack");
+    const attack = Math.max(1, Math.floor(effectiveStat(attacker, "attack") * (attacker.status === "burned" ? 0.72 : 1)));
     const defense = Math.max(5, effectiveStat(defender, "defense"));
     const stab = typesOf(attacker).includes(move.type) ? 1.5 : 1;
     const typeMod = typeModifier(move.type, typesOf(defender));
     const variance = 0.86 + Math.random() * 0.14;
-    const raw = (((2 * attacker.level / 5 + 2) * move.power * attack / defense) / 50 + 2) * stab * typeMod * variance;
+    const critical = Math.random() < Math.min(0.22, 0.055 + effectiveStat(attacker, "speed") / 950);
+    const raw = (((2 * attacker.level / 5 + 2) * move.power * attack / defense) / 50 + 2) * stab * typeMod * variance * (critical ? 1.7 : 1);
     const damage = typeMod === 0 ? 0 : Math.max(1, Math.floor(raw));
     defender.hp = clamp(defender.hp - damage, 0, defender.maxHp);
     if (damage === 0) lines.push("It had no effect.");
@@ -2849,6 +3316,11 @@
     if (damage > 0) pulseBattleFx(attacker === activePokemon() ? "enemy-hit" : "player-hit");
     if (typeMod > 1) lines.push("It was super effective.");
     if (typeMod > 0 && typeMod < 1) lines.push("It was not very effective.");
+    if (critical && damage > 0) lines.push("A critical hit.");
+    if (damage > 0 && move.status && !defender.status && Math.random() < move.statusChance) {
+      defender.status = move.status;
+      lines.push(`${defender.name} was ${move.status}.`);
+    }
     if (move.drain && damage > 0) {
       const healed = healPokemon(attacker, Math.max(1, Math.floor(damage * move.drain)));
       if (healed > 0) lines.push(`${attacker.name} recovered ${healed} HP.`);
@@ -2873,6 +3345,45 @@
     }
     tone(330, 0.05, "triangle");
     return lines;
+  }
+
+  function canActThisTurn(pokemon) {
+    if (!pokemon || !pokemon.status) return true;
+    if (pokemon.status === "paralyzed") return Math.random() > 0.25;
+    if (pokemon.status === "frosted") return Math.random() > 0.18;
+    return true;
+  }
+
+  function applyEndTurnEffects() {
+    const battle = state.battle;
+    if (!battle) return [];
+    const lines = [];
+    const battlers = [activePokemon(), battleEnemy()].filter(Boolean);
+    battlers.forEach((pokemon) => {
+      if (pokemon.hp <= 0) return;
+      if (pokemon.status === "poisoned" || pokemon.status === "burned") {
+        const damage = Math.max(1, Math.floor(pokemon.maxHp / (pokemon.status === "burned" ? 12 : 10)));
+        pokemon.hp = clamp(pokemon.hp - damage, 0, pokemon.maxHp);
+        lines.push(`${pokemon.name} is hurt by ${pokemon.status}.`);
+      }
+      if (state.world.weather === "snow" && !typesOf(pokemon).includes("ice")) {
+        const chip = Math.max(1, Math.floor(pokemon.maxHp / 24));
+        pokemon.hp = clamp(pokemon.hp - chip, 0, pokemon.maxHp);
+        lines.push(`${pokemon.name} is chilled by the snow.`);
+      }
+    });
+    return lines;
+  }
+
+  function maybeTrainerUseItem(enemy, lines) {
+    const battle = state.battle;
+    if (!battle || battle.trainerItems <= 0 || !enemy || enemy.hp <= 0) return false;
+    if (enemy.hp > Math.floor(enemy.maxHp * 0.32)) return false;
+    battle.trainerItems -= 1;
+    const healed = healPokemon(enemy, Math.max(24, Math.floor(enemy.maxHp * 0.45)));
+    lines.push(`${battle.trainerName} used a Hyper Potion.`);
+    lines.push(`${enemy.name} recovered ${healed} HP.`);
+    return true;
   }
 
   function handleEnemyFainted() {
@@ -2923,6 +3434,7 @@
         state.money += battle.reward || 0;
         state.flags.trainers[battle.trainerId] = true;
         battle.log.push(`You won $${battle.reward}.`);
+        runCutscene(`${battle.trainerId}-win`, battle);
         if (battle.badge && !state.badges.includes(battle.badge)) {
           state.badges.push(battle.badge);
           battle.log.push(`${battle.badge} earned.`);
@@ -2960,6 +3472,20 @@
       battle.finishTitle = "Crown Lights Restored";
       battle.finishText = "Director Vey's blackout protocol failed. The league desk is open, and Jules is waiting for a final gate battle.";
       state.money += 500;
+    }
+  }
+
+  function runCutscene(id, battle) {
+    if (state.flags.cutscenes[id]) return;
+    state.flags.cutscenes[id] = true;
+    if (battle.trainerId && battle.trainerId.startsWith("gym-")) {
+      battle.log.push("The gym lights sweep across the arena.");
+      battle.log.push(`${battle.trainerName} registers your badge in the circuit network.`);
+    } else if (battle.trainerId && battle.trainerId.startsWith("umbra")) {
+      battle.log.push("Team Umbra's device spits static and goes dark.");
+      battle.log.push("A new route signal stabilizes on your map.");
+    } else if (battle.trainerId && battle.trainerId.startsWith("rival")) {
+      battle.log.push(`${battle.trainerName} points toward the next city before running ahead.`);
     }
   }
 
@@ -3119,7 +3645,9 @@
     let bestScore = -1;
     options.forEach((key) => {
       const move = MOVES[key] || MOVES.tackle;
-      const score = (move.power || 16) * typeModifier(move.type, typesOf(defender)) * (typesOf(attacker).includes(move.type) ? 1.2 : 1) + Math.random() * 16;
+      const statusBonus = move.status && !defender.status ? 18 : 0;
+      const lowHpDrain = move.drain && attacker.hp < attacker.maxHp * 0.45 ? 24 : 0;
+      const score = (move.power || 16) * typeModifier(move.type, typesOf(defender)) * (typesOf(attacker).includes(move.type) ? 1.2 : 1) + statusBonus + lowHpDrain + Math.random() * 16;
       if (score > bestScore) {
         best = key;
         bestScore = score;
@@ -3188,6 +3716,9 @@
       maxHp: 1,
       stats: { attack: 1, defense: 1, speed: 1 },
       moves: movesForLevel(speciesId, level),
+      status: "",
+      caughtAt: currentRouteName(),
+      ability: abilityFor(speciesId),
       stages: { attack: 0, defense: 0, speed: 0 }
     };
     recalcPokemon(pokemon, false);
@@ -3292,6 +3823,32 @@
 
   function typesOf(pokemon) {
     return speciesOf(pokemon.speciesId).types;
+  }
+
+  function abilityFor(speciesId) {
+    const species = speciesOf(speciesId);
+    const primary = species.types[0];
+    const abilities = {
+      fire: "Blaze Heart",
+      water: "Torrent Step",
+      grass: "Overgrow",
+      electric: "Static Charge",
+      rock: "Sturdy",
+      ground: "Dust Guard",
+      poison: "Venom Veil",
+      psychic: "Focus Lens",
+      ghost: "Night Drift",
+      ice: "Snow Cloak",
+      bug: "Swarm",
+      flying: "Keen Eye",
+      dark: "Pressure",
+      steel: "Iron Guard",
+      fairy: "Charm Aura",
+      dragon: "Inner Flame",
+      fighting: "Guts",
+      normal: "Run Up"
+    };
+    return abilities[primary] || "Steady";
   }
 
   function typeStrip(types) {
@@ -3417,6 +3974,16 @@
     els.audioButton.title = state.audioMuted ? "Sound off" : "Sound on";
   }
 
+  function playAmbientCue() {
+    const route = routeKey();
+    const weather = state.world.weather || "clear";
+    const base = cityAt(state.player.x, state.player.y) ? 392 : route === "coast" ? 330 : route === "woods" ? 294 : 349;
+    tone(base, 0.05, "sine");
+    if (weather === "rain") tone(base + 120, 0.035, "triangle", 0.08);
+    if (weather === "spark") tone(880, 0.035, "square", 0.06);
+    if (timeOfDay() === "night") tone(base / 2, 0.08, "sine", 0.12);
+  }
+
   function tone(frequency, duration = 0.06, type = "sine", delay = 0) {
     if (state.audioMuted) return;
     try {
@@ -3499,6 +4066,11 @@
     }
   }, 50);
 
+  window.setInterval(() => {
+    if (!state.party.length || state.audioMuted || state.battle || isLocked()) return;
+    playAmbientCue();
+  }, 9000);
+
   document.addEventListener("click", (event) => {
     if (event.target.closest("#dialogBox")) {
       closeDialog();
@@ -3550,6 +4122,26 @@
       useItemPotion(index, true);
       return;
     }
+    const summaryParty = event.target.closest("[data-summary-party]");
+    if (summaryParty) {
+      showPokemonSummary("party", Number(summaryParty.dataset.summaryParty));
+      return;
+    }
+    const summaryPc = event.target.closest("[data-summary-pc]");
+    if (summaryPc) {
+      showPokemonSummary("pc", Number(summaryPc.dataset.summaryPc));
+      return;
+    }
+    const deposit = event.target.closest("[data-deposit]");
+    if (deposit) {
+      depositPokemon(Number(deposit.dataset.deposit));
+      return;
+    }
+    const withdraw = event.target.closest("[data-withdraw]");
+    if (withdraw) {
+      withdrawPokemon(Number(withdraw.dataset.withdraw));
+      return;
+    }
     const switchTarget = event.target.closest("[data-switch-to]");
     if (switchTarget) {
       switchTo(Number(switchTarget.dataset.switchTo));
@@ -3557,6 +4149,26 @@
     }
     if (event.target.closest("[data-open-map]")) {
       showRegionMap();
+      return;
+    }
+    const profileLoad = event.target.closest("[data-profile-load]");
+    if (profileLoad) {
+      switchProfile(profileLoad.dataset.profileLoad);
+      return;
+    }
+    const profileClear = event.target.closest("[data-profile-clear]");
+    if (profileClear) {
+      const profileId = profileClear.dataset.profileClear;
+      if (window.confirm(`Clear File ${PROFILE_IDS.indexOf(profileId) + 1}?`)) {
+        localStorage.removeItem(currentSaveKey(profileId));
+        if (profileId === activeProfileId) {
+          state = freshState();
+          applyEditionTheme("ember");
+          els.editionModal.hidden = false;
+        }
+        renderProfiles();
+        renderAll();
+      }
     }
   });
 
@@ -3573,6 +4185,73 @@
     saveGame(false);
     renderAll();
     tone(622, 0.08, "sine");
+  }
+
+  function showPokemonSummary(source, index) {
+    const list = source === "pc" ? state.pc : state.party;
+    const pokemon = list[index];
+    if (!pokemon) return;
+    summaryTarget = { source, index };
+    const species = speciesOf(pokemon.speciesId);
+    els.summaryKicker.textContent = source === "pc" ? "Stored Partner" : index === state.activeIndex ? "Lead Partner" : "Party Partner";
+    els.summaryTitle.textContent = pokemon.name;
+    els.summaryBody.innerHTML = `
+      <div class="summary-grid">
+        ${spriteBox(pokemon, "front")}
+        <div class="summary-stats">
+          ${typeStrip(species.types)}
+          <div><strong>Level</strong><span>${pokemon.level}</span></div>
+          <div><strong>HP</strong><span>${pokemon.hp}/${pokemon.maxHp}</span></div>
+          <div><strong>Attack</strong><span>${pokemon.stats.attack}</span></div>
+          <div><strong>Defense</strong><span>${pokemon.stats.defense}</span></div>
+          <div><strong>Speed</strong><span>${pokemon.stats.speed}</span></div>
+          <div><strong>Ability</strong><span>${pokemon.ability || abilityFor(pokemon.speciesId)}</span></div>
+          <div><strong>Status</strong><span>${pokemon.status || "OK"}</span></div>
+          <div><strong>Caught</strong><span>${pokemon.caughtAt || "Unknown"}</span></div>
+        </div>
+      </div>
+      <div class="move-summary">
+        ${(pokemon.moves || []).map((key) => {
+          const move = MOVES[key] || MOVES.tackle;
+          return `<span class="type-${move.type}">${move.name}<small>${move.type} / ${move.power || "status"}</small></span>`;
+        }).join("")}
+      </div>
+    `;
+    els.summaryModal.hidden = false;
+  }
+
+  function depositPokemon(index) {
+    if (state.party.length <= 1) return;
+    const [pokemon] = state.party.splice(index, 1);
+    if (!pokemon) return;
+    state.pc.push(pokemon);
+    if (state.activeIndex >= state.party.length) state.activeIndex = 0;
+    pushLog(`${pokemon.name} was deposited in the PC.`);
+    saveGame(false);
+    renderAll();
+  }
+
+  function withdrawPokemon(index) {
+    if (state.party.length >= 6) return;
+    const [pokemon] = state.pc.splice(index, 1);
+    if (!pokemon) return;
+    state.party.push(pokemon);
+    pushLog(`${pokemon.name} joined the party from the PC.`);
+    saveGame(false);
+    renderAll();
+  }
+
+  function nicknameSummaryPokemon() {
+    if (!summaryTarget) return;
+    const list = summaryTarget.source === "pc" ? state.pc : state.party;
+    const pokemon = list[summaryTarget.index];
+    if (!pokemon) return;
+    const next = window.prompt("Nickname", pokemon.name);
+    if (!next) return;
+    pokemon.name = next.trim().slice(0, 18) || pokemon.name;
+    saveGame(false);
+    showPokemonSummary(summaryTarget.source, summaryTarget.index);
+    renderAll();
   }
 
   document.querySelectorAll("[data-move]").forEach((button) => {
@@ -3625,7 +4304,7 @@
   els.resetButton.addEventListener("click", () => {
     const ok = window.confirm("Reset this run?");
     if (!ok) return;
-    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(currentSaveKey());
     state = freshState();
     applyEditionTheme("ember");
     els.editionModal.hidden = false;
@@ -3642,7 +4321,7 @@
     renderAll();
   });
   els.newRunButton.addEventListener("click", () => {
-    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(currentSaveKey());
     state = freshState();
     els.finishModal.hidden = true;
     applyEditionTheme("ember");

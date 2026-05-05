@@ -25,6 +25,9 @@
         <div><span>Edition</span><strong id="editionName">v3</strong></div>
       </div>
       <div class="top-actions">
+        <button class="icon-button" id="profileButton" type="button" title="Profiles" aria-label="Open save profiles">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 9a7 7 0 0 1 14 0z"/></svg>
+        </button>
         <button class="icon-button" id="mapButton" type="button" title="Region map" aria-label="Open region map">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zm7 .2v11.9l4 1.3V6.5zm-2 0L5 6.2v11.1l3-1zm8 1.3v11.9l3-1V6.2z"/></svg>
         </button>
@@ -62,6 +65,7 @@
           <canvas id="worldCanvas" width="768" height="512" aria-label="Map"></canvas>
           <div class="pause-menu" id="pauseMenu" hidden>
             <button type="button" data-menu-tab="party">Pokemon</button>
+            <button type="button" data-menu-tab="pc">PC</button>
             <button type="button" data-menu-tab="bag">Bag</button>
             <button type="button" data-menu-tab="map">Map</button>
             <button type="button" data-menu-tab="dex">Pokedex</button>
@@ -98,12 +102,14 @@
       <aside class="side-panel" aria-label="Trainer panels">
         <div class="tabs" role="tablist" aria-label="Trainer views">
           <button class="tab is-active" type="button" data-tab="party" role="tab" aria-selected="true">Party</button>
+          <button class="tab" type="button" data-tab="pc" role="tab" aria-selected="false">PC</button>
           <button class="tab" type="button" data-tab="bag" role="tab" aria-selected="false">Bag</button>
           <button class="tab" type="button" data-tab="map" role="tab" aria-selected="false">Map</button>
           <button class="tab" type="button" data-tab="dex" role="tab" aria-selected="false">Dex</button>
           <button class="tab" type="button" data-tab="log" role="tab" aria-selected="false">Journal</button>
         </div>
         <div class="panel-view is-active" id="partyPanel" role="tabpanel"></div>
+        <div class="panel-view" id="pcPanel" role="tabpanel"></div>
         <div class="panel-view" id="bagPanel" role="tabpanel"></div>
         <div class="panel-view" id="mapPanel" role="tabpanel"></div>
         <div class="panel-view" id="dexPanel" role="tabpanel"></div>
@@ -148,6 +154,33 @@
           <h2>Choose your edition</h2>
         </div>
         <div class="edition-grid" id="editionGrid"></div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="profileModal" hidden>
+      <div class="modal profile-modal">
+        <div class="modal-header">
+          <p>Save Profiles</p>
+          <h2>Choose a file</h2>
+        </div>
+        <div class="profile-grid" id="profileGrid"></div>
+        <div class="modal-actions">
+          <button type="button" id="profileCloseButton">Close</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="summaryModal" hidden>
+      <div class="modal summary-modal">
+        <div class="modal-header">
+          <p id="summaryKicker">Pokemon Summary</p>
+          <h2 id="summaryTitle">Partner</h2>
+        </div>
+        <div id="summaryBody"></div>
+        <div class="modal-actions">
+          <button type="button" id="summaryNicknameButton">Nickname</button>
+          <button type="button" id="summaryCloseButton">Close</button>
+        </div>
       </div>
     </section>
 
