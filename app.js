@@ -134,9 +134,9 @@
     "water-gun": { name: "Water Gun", type: "water", power: 45, accuracy: 100 },
     bubble: { name: "Bubble", type: "water", power: 40, accuracy: 100 },
     "aqua-tail": { name: "Aqua Tail", type: "water", power: 90, accuracy: 90 },
-    ember: { name: "Ember", type: "fire", power: 45, accuracy: 100 },
-    "flame-wheel": { name: "Flame Wheel", type: "fire", power: 60, accuracy: 100 },
-    "fire-spin": { name: "Fire Spin", type: "fire", power: 45, accuracy: 85 },
+    ember: { name: "Ember", type: "fire", power: 45, accuracy: 100, status: "burned", statusChance: 0.12 },
+    "flame-wheel": { name: "Flame Wheel", type: "fire", power: 60, accuracy: 100, status: "burned", statusChance: 0.16 },
+    "fire-spin": { name: "Fire Spin", type: "fire", power: 45, accuracy: 85, status: "burned", statusChance: 0.18 },
     "thunder-shock": { name: "Thunder Shock", type: "electric", power: 40, accuracy: 100 },
     spark: { name: "Spark", type: "electric", power: 65, accuracy: 100, status: "paralyzed", statusChance: 0.18 },
     "thunderbolt": { name: "Thunderbolt", type: "electric", power: 90, accuracy: 100, status: "paralyzed", statusChance: 0.16 },
@@ -150,12 +150,12 @@
     "mud-slap": { name: "Mud Slap", type: "ground", power: 35, accuracy: 100 },
     "rock-throw": { name: "Rock Throw", type: "rock", power: 50, accuracy: 90 },
     "rock-slide": { name: "Rock Slide", type: "rock", power: 75, accuracy: 90 },
-    confusion: { name: "Confusion", type: "psychic", power: 50, accuracy: 100 },
-    psybeam: { name: "Psybeam", type: "psychic", power: 65, accuracy: 100 },
+    confusion: { name: "Confusion", type: "psychic", power: 50, accuracy: 100, status: "confused", statusChance: 0.14 },
+    psybeam: { name: "Psybeam", type: "psychic", power: 65, accuracy: 100, status: "confused", statusChance: 0.18 },
     lick: { name: "Lick", type: "ghost", power: 30, accuracy: 100 },
     "shadow-sneak": { name: "Shadow Sneak", type: "ghost", power: 40, accuracy: 100, priority: 1 },
-    "ice-shard": { name: "Ice Shard", type: "ice", power: 40, accuracy: 100, priority: 1 },
-    aurora: { name: "Aurora Beam", type: "ice", power: 65, accuracy: 100 },
+    "ice-shard": { name: "Ice Shard", type: "ice", power: 40, accuracy: 100, priority: 1, status: "frosted", statusChance: 0.1 },
+    aurora: { name: "Aurora Beam", type: "ice", power: 65, accuracy: 100, status: "frosted", statusChance: 0.16 },
     "metal-claw": { name: "Metal Claw", type: "steel", power: 50, accuracy: 95 },
     "fairy-wind": { name: "Fairy Wind", type: "fairy", power: 40, accuracy: 100 },
     "dragon-breath": { name: "Dragon Breath", type: "dragon", power: 60, accuracy: 100 },
@@ -415,7 +415,16 @@
       { tile: "neon", x: 25, y: 47, w: 14, h: 5 },
       { tile: "mist", x: 5, y: 33, w: 20, h: 8 },
       { tile: "star", x: 38, y: 23, w: 20, h: 8 },
-      { tile: "royal", x: 67, y: 53, w: 18, h: 5 }
+      { tile: "royal", x: 67, y: 53, w: 18, h: 5 },
+      { tile: "plaza", x: 25, y: 8, w: 2, h: 2 },
+      { tile: "plaza", x: 51, y: 13, w: 2, h: 2 },
+      { tile: "plaza", x: 18, y: 42, w: 2, h: 2 },
+      { tile: "plaza", x: 49, y: 22, w: 2, h: 2 },
+      { tile: "plaza", x: 38, y: 30, w: 2, h: 2 },
+      { tile: "plaza", x: 56, y: 45, w: 2, h: 2 },
+      { tile: "plaza", x: 33, y: 47, w: 2, h: 2 },
+      { tile: "plaza", x: 49, y: 25, w: 2, h: 2 },
+      { tile: "plaza", x: 78, y: 54, w: 2, h: 2 }
     ],
     collision: [
       { x: 90, y: 35, w: 4, h: 21, reason: "Deep water blocks the east bank." },
@@ -424,7 +433,128 @@
     ],
     events: [
       { id: "rare-grove", x: 18, y: 35, w: 3, h: 3, type: "rare", text: "A hidden grove rustles with unusually rare partners." },
-      { id: "postgame-signal", x: 75, y: 57, w: 3, h: 3, type: "postgame", text: "The restored Crown antenna points toward a future legendary signal." }
+      { id: "postgame-signal", x: 75, y: 57, w: 3, h: 3, type: "postgame", text: "The restored Crown antenna points toward a future legendary signal." },
+      { id: "sunpetal-cache", x: 25, y: 8, w: 2, h: 2, type: "cache", text: "You found a route cache tucked under warm flowers.", reward: { herbs: 2, balls: 1 } },
+      { id: "quarry-shortcut", x: 51, y: 13, w: 2, h: 2, type: "shortcut", text: "The quarry mine cart shortcut rattles to life.", badge: "Granite Badge", to: { x: 62, y: 17 } },
+      { id: "mist-cache", x: 18, y: 42, w: 2, h: 2, type: "cache", text: "A mist-hidden satchel held rare crafting pieces.", reward: { shards: 2, circuit: 1 } },
+      { id: "dungeon-mine", x: 49, y: 22, w: 2, h: 2, type: "dungeon", dungeonId: "quarry-mine" },
+      { id: "dungeon-hideout", x: 38, y: 30, w: 2, h: 2, type: "dungeon", dungeonId: "umbra-hideout" },
+      { id: "dungeon-frost", x: 56, y: 45, w: 2, h: 2, type: "dungeon", dungeonId: "frozen-cave" },
+      { id: "dungeon-power", x: 33, y: 47, w: 2, h: 2, type: "dungeon", dungeonId: "neon-plant" },
+      { id: "dungeon-tower", x: 49, y: 25, w: 2, h: 2, type: "dungeon", dungeonId: "observatory-tower" },
+      { id: "dungeon-core", x: 78, y: 54, w: 2, h: 2, type: "dungeon", dungeonId: "crown-core" }
+    ]
+  };
+
+  const CITY_IDENTITIES = {
+    lumen: { vibe: "starter village", accent: "#5bb9d6", shop: "Field Kit Co.", music: "bright marimba loop", exclusive: "Pidgey", rumor: "The professor tracks every badge pulse from the lab." },
+    bracken: { vibe: "living-garden city", accent: "#4e9e56", shop: "Vine & Vial", music: "soft woodwinds", exclusive: "Oddish", rumor: "Sylva's vines point toward hidden route caches." },
+    quarry: { vibe: "tram-and-stone town", accent: "#8a7a62", shop: "Granite Supply", music: "low percussion", exclusive: "Geodude", rumor: "Mine carts can skip half the pass once the badge is logged." },
+    harbor: { vibe: "saltwater port", accent: "#3398c8", shop: "Tide Market", music: "steel drums", exclusive: "Staryu", rumor: "Rain makes the coast glitter with rare silhouettes." },
+    emberfall: { vibe: "furnace city", accent: "#d86242", shop: "Coalbright Goods", music: "hot brass", exclusive: "Vulpix", rumor: "Ash trails hide crafting herbs after sunset." },
+    crown: { vibe: "league capital", accent: "#7567d9", shop: "Crown Exchange", music: "orchestral pulse", exclusive: "Dratini", rumor: "The restored antenna is not only receiving league data." },
+    frostvale: { vibe: "quiet ice basin", accent: "#67bec7", shop: "Glacier Medic", music: "glass bells", exclusive: "Spheal", rumor: "The frozen cave rewards patient pathing." },
+    neon: { vibe: "electric highlands", accent: "#d5b125", shop: "Neon Parts", music: "syncopated synth", exclusive: "Electrike", rumor: "Volt's transformers wake up roaming sparks." },
+    thornmere: { vibe: "mist garden", accent: "#8e55b7", shop: "Mire Apothecary", music: "muted strings", exclusive: "Gastly", rumor: "Mist bells echo differently at night." },
+    astral: { vibe: "observatory city", accent: "#dc5c94", shop: "Star Lens Archive", music: "celesta arpeggios", exclusive: "Ralts", rumor: "The tower lens still records Team Umbra's old path." }
+  };
+
+  const CITY_EXCLUSIVE_SPECIES = {
+    lumen: 16, bracken: 43, quarry: 74, harbor: 120, emberfall: 37, crown: 147, frostvale: 363, neon: 309, thornmere: 92, astral: 280
+  };
+
+  const DUNGEONS = {
+    "quarry-mine": {
+      title: "Quarry Mine",
+      cityId: "quarry",
+      minBadges: 2,
+      rooms: ["Stabilize the lift chain.", "Route the ore cart around a broken rail.", "Challenge the foreman at the crystal seam."],
+      sequence: ["brace", "switch", "signal"],
+      options: ["signal", "brace", "switch"],
+      reward: { money: 420, shards: 2 },
+      boss: { name: "Foreman Garr", team: [{ id: 74, level: 18 }, { id: 95, level: 19 }], reward: 520, strategy: "wall" }
+    },
+    "umbra-hideout": {
+      title: "Umbra Hideout",
+      cityId: "astral",
+      minBadges: 5,
+      rooms: ["Cut the blackout camera feed.", "Decode the crate route ledger.", "Corner the relay captain."],
+      sequence: ["camera", "ledger", "relay"],
+      options: ["relay", "camera", "ledger"],
+      reward: { money: 720, shards: 3, circuit: 1 },
+      boss: { name: "Relay Captain Ivo", team: [{ id: 41, level: 29 }, { id: 262, level: 30 }, { id: 109, level: 31 }], reward: 940, strategy: "status" }
+    },
+    "frozen-cave": {
+      title: "Frozen Cave",
+      cityId: "frostvale",
+      minBadges: 5,
+      rooms: ["Read the snowmelt arrows.", "Break the blue ice mirror.", "Face the cave warden."],
+      sequence: ["arrow", "mirror", "warden"],
+      options: ["mirror", "warden", "arrow"],
+      reward: { berries: 4, herbs: 3 },
+      boss: { name: "Warden Sile", team: [{ id: 86, level: 28 }, { id: 90, level: 29 }, { id: 363, level: 31 }], reward: 880, strategy: "stall" }
+    },
+    "neon-plant": {
+      title: "Neon Power Plant",
+      cityId: "neon",
+      minBadges: 6,
+      rooms: ["Align the ground relay.", "Spin up the backup turbine.", "Battle the surge technician."],
+      sequence: ["ground", "turbine", "surge"],
+      options: ["surge", "ground", "turbine"],
+      reward: { circuit: 2, shards: 2 },
+      boss: { name: "Technician Rhea", team: [{ id: 100, level: 33 }, { id: 81, level: 34 }, { id: 309, level: 35 }], reward: 1120, strategy: "sweeper" }
+    },
+    "observatory-tower": {
+      title: "Observatory Tower",
+      cityId: "astral",
+      minBadges: 7,
+      rooms: ["Focus the moon lens.", "Trace the comet chart.", "Defend the star archive."],
+      sequence: ["moon", "comet", "archive"],
+      options: ["archive", "moon", "comet"],
+      reward: { money: 900, circuit: 1, balls: 3 },
+      boss: { name: "Archivist Vela", team: [{ id: 63, level: 36 }, { id: 96, level: 37 }, { id: 282, level: 38 }], reward: 1280, strategy: "status" }
+    },
+    "crown-core": {
+      title: "Crown Signal Core",
+      cityId: "crown",
+      minBadges: 8,
+      rooms: ["Open the antenna spine.", "Purge the Umbra remnant loop.", "Challenge the core sentinel."],
+      sequence: ["spine", "purge", "sentinel"],
+      options: ["sentinel", "spine", "purge"],
+      reward: { money: 1600, circuit: 3, shards: 4 },
+      boss: { name: "Core Sentinel Vey", team: [{ id: 24, level: 43 }, { id: 81, level: 44 }, { id: 143, level: 45 }], reward: 2100, strategy: "boss" }
+    }
+  };
+
+  const ELITE_LADDER = [
+    { name: "Elite Mira", theme: "water", strategy: "rain", reward: 1800, team: [{ id: 120, level: 45 }, { id: 118, level: 46 }, { id: 9, level: 47 }] },
+    { name: "Elite Calder", theme: "fire", strategy: "sweeper", reward: 2100, team: [{ id: 58, level: 47 }, { id: 77, level: 48 }, { id: 6, level: 49 }] },
+    { name: "Elite Rune", theme: "psychic", strategy: "status", reward: 2400, team: [{ id: 63, level: 49 }, { id: 96, level: 50 }, { id: 282, level: 51 }] },
+    { name: "Champion Jules", theme: "rival", strategy: "adaptive", reward: 3200, team: [{ id: 20, level: 52 }, { id: 25, level: 52 }, { id: 147, level: 53 }, { id: 143, level: 54 }] }
+  ];
+
+  const GROWTH_ACTIONS = [
+    { id: "train-power", name: "Power Drill", stat: "attack", cost: { herbs: 1, shards: 1 }, mood: "Focused" },
+    { id: "train-guard", name: "Guard Drill", stat: "defense", cost: { herbs: 2 }, mood: "Steady" },
+    { id: "train-speed", name: "Agility Drill", stat: "speed", cost: { circuit: 1 }, mood: "Energized" },
+    { id: "hold-charm", name: "Equip Focus Charm", heldItem: "Focus Charm", cost: { shards: 2, circuit: 1 }, mood: "Confident" }
+  ];
+
+  const CINEMATIC_CHAPTERS = {
+    "chapter-first-steps": [
+      { title: "Chapter 1", text: "Lumen's road opens. Jules is already sprinting east.", focus: { x: 24, y: 10 } },
+      { title: "Professor Maple", text: "The circuit is a living map. Listen when it changes.", focus: { x: 12, y: 10 } }
+    ],
+    "chapter-umbra-reveal": [
+      { title: "Black Crates", text: "A Team Umbra relay vanishes beyond Quarry's cable road.", focus: { x: 54, y: 12 } },
+      { title: "Jules", text: "They are not stealing badges. They are stealing the network.", focus: { x: 48, y: 33 } }
+    ],
+    "chapter-crown-blackout": [
+      { title: "Crown Blackout", text: "Every gym signal bends toward Crown Station.", focus: { x: 76, y: 57 } },
+      { title: "Director Vey", text: "The final antenna is waiting under the capital lights.", focus: { x: 78, y: 54 } }
+    ],
+    "chapter-champion-loop": [
+      { title: "Champion Loop", text: "Dungeons, rematches, roaming bosses, and the elite ladder now answer to you.", focus: { x: 76, y: 60 } }
     ]
   };
 
@@ -487,6 +617,20 @@
   };
 
   const WEATHER_TYPES = ["clear", "rain", "wind", "spark", "mist", "snow"];
+  const FIELD_ABILITIES = [
+    { id: "surf", name: "Tide Step", types: ["water"], tile: "water", reward: "cross water edges" },
+    { id: "cut", name: "Vine Sense", types: ["grass"], tile: "tree", reward: "open hidden groves" },
+    { id: "smash", name: "Rock Break", types: ["fighting", "ground", "rock"], tile: "rock", reward: "clear cracked stone" },
+    { id: "spark", name: "Power Pulse", types: ["electric"], tile: "gate", reward: "wake field relays" },
+    { id: "mind", name: "Signal Sight", types: ["psychic", "ghost"], tile: "secret", reward: "reveal rare caches" }
+  ];
+  const SECRET_SITES = [
+    { id: "lake-relic", x: 16, y: 29, w: 3, h: 2, ability: "surf", title: "Lake Relic", text: "Your Water partner ferried you to a quiet relic island.", reward: { shards: 2, circuit: 1 } },
+    { id: "bracken-grove", x: 25, y: 23, w: 3, h: 3, ability: "cut", title: "Overgrown Grove", text: "Your Grass partner parted the vines around a secret grove.", reward: { herbs: 4, berries: 2 } },
+    { id: "quarry-crack", x: 45, y: 20, w: 4, h: 3, ability: "smash", title: "Cracked Quarry Wall", text: "A sturdy partner opened a cracked quarry wall.", reward: { shards: 3, money: 350 } },
+    { id: "neon-relay", x: 35, y: 49, w: 2, h: 2, ability: "spark", title: "Neon Relay", text: "Your Electric partner jump-started a sleeping field relay.", reward: { circuit: 2, potions: 1 } },
+    { id: "astral-cache", x: 51, y: 31, w: 2, h: 2, ability: "mind", title: "Astral Cache", text: "A psychic signal revealed a cache under the observatory path.", reward: { balls: 3, shards: 2 } }
+  ];
 
   const ASSET_PACKS = {
     premium: {
@@ -1132,6 +1276,8 @@
   let trainerApproach = null;
   let currentInterior = null;
   let currentPuzzle = null;
+  let currentDungeon = null;
+  let cinematicCamera = null;
   let summaryTarget = null;
   let introStep = 0;
   let battleFxTimer = 0;
@@ -1145,7 +1291,7 @@
   function freshState(editionId = null) {
     const selectedEdition = editionId && EDITIONS[editionId] ? editionId : null;
     return {
-      version: 4,
+      version: 5,
       profileId: activeProfileId,
       edition: selectedEdition,
       trainer: { name: "Rookie" },
@@ -1158,9 +1304,10 @@
       badges: [],
       dexSeen: [],
       dexCaught: [],
-      flags: { mapleGift: false, trainers: {}, story: {}, quests: {}, scripts: {}, cutscenes: {}, puzzles: {} },
+      flags: { mapleGift: false, trainers: {}, story: {}, quests: {}, scripts: {}, cutscenes: {}, puzzles: {}, dungeons: {}, caches: {}, shortcuts: {}, rematches: {}, secrets: {} },
       relationships: { rival: 0, professor: 0, leaders: 0, umbra: 0, towns: 0 },
-      world: { day: 1, weather: "clear", weatherSeed: randomInt(1, 9999), discovered: ["lumen", "bracken"], postgame: false, dynamicEvents: [], legendarySeen: false },
+      world: { day: 1, weather: "clear", weatherSeed: randomInt(1, 9999), discovered: ["lumen", "bracken"], postgame: false, dynamicEvents: [], legendarySeen: false, championRank: 0, spawnSalt: randomInt(1, 9999), renown: 0, rivalStage: 0, lastPartnerMoment: 0 },
+      stats: { trainerWins: 0, wildWins: 0, secretsFound: 0, fieldUses: 0, shinySeen: 0 },
       playtime: 0,
       log: [],
       battle: null,
@@ -1174,7 +1321,7 @@
     const selectedEdition = save.edition && EDITIONS[save.edition] ? save.edition : "ember";
     const base = freshState(selectedEdition);
     const merged = { ...base, ...save };
-    merged.version = 4;
+    merged.version = 5;
     merged.profileId = save.profileId || activeProfileId;
     merged.edition = selectedEdition;
     merged.trainer = { ...base.trainer, ...(save.trainer || {}) };
@@ -1187,11 +1334,17 @@
     merged.flags.scripts = { ...(save.flags && save.flags.scripts ? save.flags.scripts : {}) };
     merged.flags.cutscenes = { ...(save.flags && save.flags.cutscenes ? save.flags.cutscenes : {}) };
     merged.flags.puzzles = { ...(save.flags && save.flags.puzzles ? save.flags.puzzles : {}) };
+    merged.flags.dungeons = { ...(save.flags && save.flags.dungeons ? save.flags.dungeons : {}) };
+    merged.flags.caches = { ...(save.flags && save.flags.caches ? save.flags.caches : {}) };
+    merged.flags.shortcuts = { ...(save.flags && save.flags.shortcuts ? save.flags.shortcuts : {}) };
+    merged.flags.rematches = { ...(save.flags && save.flags.rematches ? save.flags.rematches : {}) };
+    merged.flags.secrets = { ...(save.flags && save.flags.secrets ? save.flags.secrets : {}) };
     merged.relationships = { ...base.relationships, ...(save.relationships || {}) };
     RELATION_KEYS.forEach((key) => {
       if (!Number.isFinite(merged.relationships[key])) merged.relationships[key] = 0;
     });
     merged.world = { ...base.world, ...(save.world || {}) };
+    merged.stats = { ...base.stats, ...(save.stats || {}) };
     merged.playtime = Math.max(0, save.playtime || 0);
     merged.party = Array.isArray(save.party) ? save.party.map(revivePokemon).filter(Boolean) : [];
     merged.pc = Array.isArray(save.pc) ? save.pc.map(revivePokemon).filter(Boolean) : [];
@@ -1223,6 +1376,9 @@
       ability: raw.ability || abilityFor(raw.speciesId),
       personality: raw.personality || personalityFor(raw.speciesId),
       bond: clamp(raw.bond || 0, 0, 100),
+      mood: raw.mood || "Ready",
+      heldItem: raw.heldItem || "",
+      training: { attack: 0, defense: 0, speed: 0, ...(raw.training || {}) },
       stages: { attack: 0, defense: 0, speed: 0 }
     };
     if (!pokemon.moves.length) pokemon.moves = movesForLevel(pokemon.speciesId, pokemon.level);
@@ -1380,6 +1536,10 @@
     return city ? city.name : "the circuit";
   }
 
+  function cityIdentity(id) {
+    return CITY_IDENTITIES[id] || { vibe: "open route", accent: "#ef704b", shop: "Circuit Market", music: "field loop", exclusive: "Pidgey", rumor: "Every route changes once badges start stacking." };
+  }
+
   function nextGymChallenge() {
     return GYM_DEFS.find((gym) => !state.badges.includes(gym.badge));
   }
@@ -1400,13 +1560,17 @@
 
   function renderTopline() {
     const edition = getEdition();
-    els.gameTitle.textContent = state.edition ? edition.name : "PokeG v4";
+    const city = cityAt(state.player.x, state.player.y);
+    const identity = city ? cityIdentity(city.id) : null;
+    els.gameTitle.textContent = state.edition ? edition.name : "PokeG v5";
     els.trainerName.textContent = state.trainer.name;
-    els.routeName.textContent = state.edition ? currentRouteName() : "Choose your edition";
+    els.routeName.textContent = state.edition ? `${currentRouteName()}${identity ? ` - ${identity.vibe}` : ""}` : "Choose your edition";
     els.badgeCount.textContent = `${state.badges.length}/${GYM_DEFS.length}`;
     els.moneyCount.textContent = `$${state.money}`;
     els.seenCount.textContent = state.dexSeen.length;
-    els.editionName.textContent = state.edition ? edition.shortName : "v4";
+    els.editionName.textContent = state.edition ? edition.shortName : "v5";
+    document.body.dataset.city = city ? city.id : routeKey();
+    document.documentElement.style.setProperty("--city-accent", identity ? identity.accent : "var(--fire)");
   }
 
   function renderQuest() {
@@ -1424,6 +1588,8 @@
     if (state.flags.trainers["umbra-boss"] && !state.flags.trainers["rival-crown"]) text = "Meet Jules at Crown Gate";
     if (state.flags.trainers["rival-crown"]) text = "The Crown League desk is open";
     if (state.world.postgame && !state.world.legendarySeen) text = "Investigate the Crown signal anomaly";
+    const marker = objectiveMarker();
+    if (marker) text = `${text} - ${Math.round(distanceTo(marker.x, marker.y))} tiles ${directionTo(marker.x, marker.y)}`;
     els.questText.textContent = text;
   }
 
@@ -1445,11 +1611,21 @@
   }
 
   function renderMapPanel() {
+    const city = cityAt(state.player.x, state.player.y);
+    const identity = city ? cityIdentity(city.id) : null;
     els.mapPanel.innerHTML = `
       <div class="map-panel-head">
         <strong>${currentRouteName()}</strong>
         <button type="button" class="party-action" data-open-map>Open</button>
       </div>
+      ${identity ? `
+        <div class="city-identity-card" style="--identity:${identity.accent}">
+          <strong>${city.name}</strong>
+          <span>${identity.vibe}</span>
+          <p>${identity.shop} - ${identity.music}</p>
+          <small>Exclusive signal: ${identity.exclusive}</small>
+        </div>
+      ` : ""}
       ${regionMapHtml(true)}
     `;
   }
@@ -1485,11 +1661,18 @@
     }).join("");
     const playerLeft = ((state.player.x + 0.5) / WORLD.width) * 100;
     const playerTop = ((state.player.y + 0.5) / WORLD.height) * 100;
+    const marker = objectiveMarker();
+    const markerHtml = marker ? `<span class="map-objective" style="left:${((marker.x + 0.5) / WORLD.width) * 100}%;top:${((marker.y + 0.5) / WORLD.height) * 100}%" title="${escapeHtml(marker.title)}"></span>` : "";
+    const secretHtml = SECRET_SITES.filter((site) => state.flags.secrets[site.id] || hasFieldAbility(site.ability)).map((site) => (
+      `<span class="map-secret ${state.flags.secrets[site.id] ? "is-found" : ""}" style="left:${((site.x + site.w / 2) / WORLD.width) * 100}%;top:${((site.y + site.h / 2) / WORLD.height) * 100}%" title="${escapeHtml(site.title)}"></span>`
+    )).join("");
     return `
       <div class="region-map ${compact ? "is-compact" : ""}">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${roads}</svg>
         ${cities}
         ${gates}
+        ${secretHtml}
+        ${markerHtml}
         <span class="map-player" style="left:${playerLeft}%;top:${playerTop}%"></span>
       </div>
     `;
@@ -1511,6 +1694,13 @@
       return;
     }
     els.partyPanel.innerHTML = `
+      <div class="partner-moment">
+        <strong>${escapeHtml(activePokemon().name)}</strong>
+        <span>${escapeHtml(partnerMoment(activePokemon()))}</span>
+      </div>
+      <div class="field-ability-list">
+        ${FIELD_ABILITIES.map((ability) => `<span class="${hasFieldAbility(ability.id) ? "is-active" : ""}">${ability.name}</span>`).join("")}
+      </div>
       <div class="party-list">
         ${state.party.map((pokemon, index) => partyCard(pokemon, index)).join("")}
       </div>
@@ -1537,6 +1727,7 @@
           <div class="xp-track"><div class="xp-fill" style="width:${xp}%"></div></div>
           <div class="stat-line"><span>${pokemon.personality || personalityFor(pokemon.speciesId)}</span><span>Bond ${pokemon.bond || 0}</span></div>
           <div class="bond-track"><div class="bond-fill" style="width:${clamp(pokemon.bond || 0, 0, 100)}%"></div></div>
+          <div class="stat-line"><span>${pokemon.mood || "Ready"}</span><span>${pokemon.heldItem || "No item"}</span></div>
           <div class="party-actions">
             <button class="party-action" type="button" data-lead="${index}" ${pokemon.hp <= 0 ? "disabled" : ""}>Lead</button>
             <button class="party-action" type="button" data-summary-party="${index}">Summary</button>
@@ -1618,6 +1809,15 @@
           </button>
         `).join("")}
       </div>
+      <div class="growth-board">
+        <strong>Partner Growth</strong>
+        ${GROWTH_ACTIONS.map((action) => `
+          <button type="button" data-growth-action="${action.id}" ${canCraft(action) && activePokemon() ? "" : "disabled"}>
+            ${action.name}
+            <span>${recipeCostText(action)}</span>
+          </button>
+        `).join("")}
+      </div>
     `;
   }
 
@@ -1642,6 +1842,27 @@
     addBond(activePokemon(), 1);
     pushLog(`${recipe.name} completed.`);
     showToast(`${recipe.name} completed.`);
+    saveGame(false);
+    renderAll();
+  }
+
+  function applyGrowthAction(actionId) {
+    const action = GROWTH_ACTIONS.find((entry) => entry.id === actionId);
+    const pokemon = activePokemon();
+    if (!action || !pokemon || !canCraft(action)) return;
+    Object.entries(action.cost).forEach(([key, value]) => {
+      state.bag[key] = Math.max(0, (state.bag[key] || 0) - value);
+    });
+    if (action.stat) {
+      pokemon.training = pokemon.training || { attack: 0, defense: 0, speed: 0 };
+      pokemon.training[action.stat] = clamp((pokemon.training[action.stat] || 0) + 2, 0, 18);
+      recalcPokemon(pokemon, true);
+    }
+    if (action.heldItem) pokemon.heldItem = action.heldItem;
+    pokemon.mood = action.mood || pokemon.mood || "Ready";
+    addBond(pokemon, 4);
+    pushLog(`${pokemon.name} completed ${action.name}.`);
+    showToast(`${pokemon.name}: ${action.name}`);
     saveGame(false);
     renderAll();
   }
@@ -1710,28 +1931,61 @@
     const dynamicRows = (state.world.dynamicEvents || []).map((event) => `
       <span class="event-pill event-${event.type || "field"}">${event.label}</span>
     `).join("");
+    const foundSecrets = Object.keys(state.flags.secrets || {}).length;
+    const trainerRank = trainerCardRank();
+    const abilityRows = FIELD_ABILITIES.map((ability) => `<span class="${hasFieldAbility(ability.id) ? "is-done" : ""}">${ability.name}: ${ability.reward}</span>`).join("");
+    const secretRows = SECRET_SITES.map((site) => `<span class="${state.flags.secrets[site.id] ? "is-done" : hasFieldAbility(site.ability) ? "is-active" : ""}">${site.title}</span>`).join("");
     const assetRows = Object.values(ASSET_PACKS).map((pack) => `
       <span>${pack.ui} UI</span><span>${pack.tiles} tiles</span><span>${pack.sprites} sprites</span><span>${pack.effects} FX</span>
     `).join("");
+    const dungeonRows = Object.entries(DUNGEONS).map(([id, dungeon]) => {
+      const progress = state.flags.dungeons[id] || 0;
+      const complete = progress >= dungeon.rooms.length;
+      return `<span class="${complete ? "is-done" : progress ? "is-active" : ""}">${dungeon.title} ${progress}/${dungeon.rooms.length}</span>`;
+    }).join("");
+    const ladderRows = ELITE_LADDER.map((entry, index) => {
+      const complete = (state.world.championRank || 0) > index;
+      return `<span class="${complete ? "is-done" : (state.world.championRank || 0) === index && state.world.postgame ? "is-active" : ""}">${index + 1}. ${entry.name}</span>`;
+    }).join("");
     els.logPanel.innerHTML = `
       <div class="objective-list">
         ${objectives}
       </div>
+      <div class="quest-tracker">
+        ${questTrackerHtml()}
+      </div>
       <div class="dynamic-events">
         <strong>Live Region Events</strong>
         <div>${dynamicRows || `<span class="event-pill">Clear roads</span>`}</div>
+      </div>
+      <div class="trainer-card">
+        <strong>Trainer Card - ${trainerRank}</strong>
+        <div>
+          <span>${state.badges.length}/${GYM_DEFS.length} badges</span>
+          <span>${state.dexCaught.length} caught</span>
+          <span>${foundSecrets}/${SECRET_SITES.length} secrets</span>
+          <span>${state.stats.trainerWins || 0} trainer wins</span>
+        </div>
       </div>
       <div class="relation-board">
         <strong>Relationships</strong>
         ${relationRows}
       </div>
       <div class="story-board">
+        <strong>Field Abilities</strong>
+        <div>${abilityRows}</div>
+        <strong>Exploration Secrets</strong>
+        <div>${secretRows}</div>
         <strong>Gym Circuit</strong>
         <div>${gymRows}</div>
         <strong>Team Umbra</strong>
         <div>${umbraRows}</div>
+        <strong>Explorable Dungeons</strong>
+        <div>${dungeonRows}</div>
         <strong>Side Quests</strong>
         <div>${sideRows}</div>
+        <strong>Elite Ladder</strong>
+        <div>${ladderRows}</div>
         <strong>Asset Packs</strong>
         <div>${assetRows}</div>
       </div>
@@ -1739,6 +1993,23 @@
         ${state.log.length ? state.log.slice(0, 24).map((entry) => `<div class="log-row"><span>${escapeHtml(entry)}</span></div>`).join("") : `<div class="empty-state">No field notes yet.</div>`}
       </div>
     `;
+  }
+
+  function questTrackerHtml() {
+    const quests = [
+      { type: "Main", title: "Grand Circuit", text: nextGymChallenge() ? `Earn ${nextGymChallenge().badge} in ${cityName(nextGymChallenge().cityId)}.` : "All eight badges are registered.", done: !nextGymChallenge() },
+      { type: "Story", title: "Team Umbra", text: nextUmbraObjective(), done: !!state.flags.trainers["umbra-boss"] },
+      { type: "Character", title: "Jules", text: nextRivalObjective(), done: !!state.flags.trainers["rival-crown"] },
+      { type: "Dungeon", title: "Signal Sites", text: `${completedDungeonCount()}/${Object.keys(DUNGEONS).length} major sites cleared.`, done: completedDungeonCount() === Object.keys(DUNGEONS).length },
+      { type: "Endgame", title: "Champion Ladder", text: state.world.postgame ? `${state.world.championRank || 0}/${ELITE_LADDER.length} ladder wins.` : "Restore Crown Station to unlock.", done: (state.world.championRank || 0) >= ELITE_LADDER.length }
+    ];
+    return quests.map((quest) => `
+      <article class="quest-card ${quest.done ? "is-done" : ""}">
+        <b>${quest.type}</b>
+        <strong>${quest.title}</strong>
+        <span>${quest.text}</span>
+      </article>
+    `).join("");
   }
 
   function refreshDynamicEvents() {
@@ -1751,7 +2022,14 @@
     if (state.badges.length >= 3 && !state.flags.trainers["umbra-quarry"]) events.push({ type: "umbra", label: "Umbra cable theft in progress" });
     if (state.relationships.towns >= 8) events.push({ type: "market", label: "Town discount network" });
     if (state.flags.trainers["umbra-boss"]) events.push({ type: "signal", label: "Crown signal restored" });
+    const city = cityAt(state.player.x, state.player.y);
+    if (city) events.push({ type: "town", label: `${city.name} reacts to ${state.badges.length} badge${state.badges.length === 1 ? "" : "s"}` });
+    const outbreak = outbreakSpecies();
+    if (outbreak) events.push({ type: "spawn", label: `${outbreak.name} outbreak near ${outbreak.route}` });
     if (state.world.postgame && !state.world.legendarySeen) events.push({ type: "legend", label: LEGENDARY_SIGNAL.title });
+    if (completedDungeonCount() < Object.keys(DUNGEONS).length && state.badges.length >= 2) events.push({ type: "dungeon", label: "Dungeon sites active" });
+    if (state.world.postgame && (state.world.championRank || 0) < ELITE_LADDER.length) events.push({ type: "elite", label: "Elite ladder open" });
+    if (visibleOverworldSpawns().some((spawn) => spawn.rare)) events.push({ type: "spawn", label: "Rare overworld spawn visible" });
     state.world.dynamicEvents = events.slice(0, 5);
   }
 
@@ -1799,6 +2077,10 @@
 
   function questStatus(quest) {
     return state.flags.quests[quest.id] || "locked";
+  }
+
+  function completedDungeonCount() {
+    return Object.entries(DUNGEONS).filter(([id, dungeon]) => (state.flags.dungeons[id] || 0) >= dungeon.rooms.length).length;
   }
 
   function advanceSideQuest(cityId) {
@@ -2017,6 +2299,7 @@
     els.introModal.hidden = true;
     els.starterModal.hidden = true;
     showCutsceneBanner("First Partner", `${starter.name} joined the Grand Circuit.`);
+    runStoryChapter("chapter-first-steps");
     showToast(`${starter.name} joined your party.`);
     saveGame(false);
     renderAll();
@@ -2044,8 +2327,10 @@
     drawWeatherOverlay(time);
     drawLandmarks(time);
     drawGates(time);
+    drawRouteFeatures(time);
     drawFootstepEffects(time);
     drawBuildings();
+    drawOverworldSpawns(time);
     const actors = [
       ...editionNpcs().map((npc) => ({ kind: "npc", y: npc.y, actor: npc })),
       { kind: "player", y: playerDisplayPosition(time).y, actor: state.player }
@@ -2058,6 +2343,14 @@
   }
 
   function updateCamera(time = performance.now()) {
+    if (cinematicCamera && time < cinematicCamera.until) {
+      const targetX = cinematicCamera.x * WORLD.tile + WORLD.tile / 2 - els.canvas.width / 2;
+      const targetY = cinematicCamera.y * WORLD.tile + WORLD.tile / 2 - els.canvas.height / 2;
+      camera.x += (clamp(targetX, 0, Math.max(0, WORLD.width * WORLD.tile - els.canvas.width)) - camera.x) * 0.08;
+      camera.y += (clamp(targetY, 0, Math.max(0, WORLD.height * WORLD.tile - els.canvas.height)) - camera.y) * 0.08;
+      return;
+    }
+    cinematicCamera = null;
     const player = playerDisplayPosition(time);
     const targetX = player.x * WORLD.tile + WORLD.tile / 2 - els.canvas.width / 2;
     const targetY = player.y * WORLD.tile + WORLD.tile / 2 - els.canvas.height / 2;
@@ -2093,6 +2386,7 @@
   function settlePlayerMotion(time) {
     if (!playerMotion || time - playerMotion.started < playerMotion.duration) return;
     playerMotion = null;
+    if (isLocked()) return;
     if (checkTrainerVision(time)) return;
     maybeWildEncounter();
   }
@@ -2386,6 +2680,28 @@
     });
   }
 
+  function drawRouteFeatures(time) {
+    TILEMAP_LAYERS.events.forEach((event) => {
+      if (event.type === "cache" && state.flags.caches[event.id]) return;
+      if (event.type === "dungeon" && DUNGEONS[event.dungeonId] && (state.flags.dungeons[event.dungeonId] || 0) >= DUNGEONS[event.dungeonId].rooms.length) return;
+      if (!["cache", "shortcut", "dungeon", "rare", "postgame"].includes(event.type)) return;
+      const px = event.x * WORLD.tile - camera.x;
+      const py = event.y * WORLD.tile - camera.y;
+      if (px < -40 || py < -40 || px > els.canvas.width + 40 || py > els.canvas.height + 40) return;
+      const cx = px + (event.w * WORLD.tile) / 2;
+      const cy = py + (event.h * WORLD.tile) / 2;
+      const pulse = 0.5 + Math.sin(time / 280 + event.x) * 0.18;
+      ctx.fillStyle = event.type === "dungeon" ? `rgba(89,70,120,${pulse})` : event.type === "cache" ? `rgba(241,200,75,${pulse})` : `rgba(255,253,246,${pulse})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, event.type === "dungeon" ? 12 : 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#17211d";
+      ctx.font = "900 10px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(event.type === "dungeon" ? "D" : event.type === "cache" ? "$" : "!", cx, cy + 4);
+    });
+  }
+
   function drawFootstepEffects(time) {
     for (let i = footstepEffects.length - 1; i >= 0; i -= 1) {
       const effect = footstepEffects[i];
@@ -2433,6 +2749,73 @@
       ctx.font = "900 11px system-ui";
       ctx.textAlign = "center";
       ctx.fillText((building.label || building.name).toUpperCase(), x + w / 2, y + 29);
+    });
+  }
+
+  function visibleOverworldSpawns() {
+    if (!state.party.length) return [];
+    return WILD_ZONES.map((zone, index) => {
+      const table = encounterTableFor(zone.encounter, getEdition().encounters);
+      const seed = hash(zone.x + state.world.day + index, zone.y + state.world.spawnSalt + state.badges.length);
+      const entry = table[seed % table.length] || table[0];
+      const x = clamp(zone.x + 2 + (seed % Math.max(2, zone.w - 4)), zone.x + 1, zone.x + zone.w - 2);
+      const y = clamp(zone.y + 2 + ((seed >> 4) % Math.max(2, zone.h - 4)), zone.y + 1, zone.y + zone.h - 2);
+      const rare = entry.weight <= 2 || state.world.postgame || state.world.weather === "spark";
+      return { id: `${zone.id}-${entry.id}`, x, y, speciesId: entry.id, levelMin: entry.min, levelMax: entry.max, area: zone.encounter, rare };
+    }).filter((spawn) => !isBlockedForSpawn(spawn.x, spawn.y));
+  }
+
+  function isBlockedForSpawn(x, y) {
+    const tile = tileAt(x, y);
+    return ["tree", "rock", "water", "building"].includes(tile) || gateAt(x, y) || lockedCityAt(x, y);
+  }
+
+  function overworldSpawnAt(x, y) {
+    return visibleOverworldSpawns().find((spawn) => spawn.x === x && spawn.y === y);
+  }
+
+  function drawOverworldSpawns(time) {
+    visibleOverworldSpawns().forEach((spawn) => {
+      const species = speciesOf(spawn.speciesId);
+      const px = spawn.x * WORLD.tile - camera.x;
+      const py = spawn.y * WORLD.tile - camera.y;
+      if (px < -40 || py < -40 || px > els.canvas.width + 40 || py > els.canvas.height + 40) return;
+      const pulse = 0.5 + Math.sin(time / 260 + spawn.speciesId) * 0.12;
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.beginPath();
+      ctx.ellipse(px + 16, py + 26, 12, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = spawn.rare ? `rgba(241,200,75,${pulse})` : "rgba(255,253,246,0.72)";
+      ctx.beginPath();
+      ctx.arc(px + 16, py + 14, spawn.rare ? 13 : 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = typeColor(typesOf({ speciesId: spawn.speciesId })[0]);
+      ctx.beginPath();
+      ctx.arc(px + 16, py + 14, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fffdf6";
+      ctx.font = "900 9px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(initials(species.name), px + 16, py + 17);
+    });
+  }
+
+  function startVisibleSpawnBattle(spawn) {
+    const avg = partyAverageLevel();
+    const min = Math.max(2, Math.min(spawn.levelMax, Math.floor(avg - 2), spawn.levelMin));
+    const max = Math.max(min, Math.min(spawn.levelMax + Math.floor(avg / 8), Math.ceil(avg + 3)));
+    const wild = createPokemon(spawn.speciesId, randomInt(min, max));
+    wild.caughtAt = routeNameForPoint(spawn.x, spawn.y);
+    markSeen(wild.speciesId);
+    state.world.spawnSalt = randomInt(1, 9999) + state.player.steps;
+    pushLog(`You approached an overworld ${wild.name}.`);
+    startBattle({
+      kind: "wild",
+      enemy: wild,
+      log: [`${wild.name} noticed you in the overworld.`],
+      locked: false,
+      ended: false,
+      forcedSwitch: false
     });
   }
 
@@ -2609,6 +2992,35 @@
   }
 
   function handleAuthoredEvent(event) {
+    if (event.type === "cache") {
+      if (state.flags.caches[event.id]) return;
+      state.flags.caches[event.id] = true;
+      applyQuestReward(event.reward || {});
+      showCutsceneBanner("Hidden Route Cache", event.text);
+      pushLog(event.text);
+      saveGame(false);
+      renderAll();
+      return;
+    }
+    if (event.type === "shortcut") {
+      if (event.badge && !state.badges.includes(event.badge)) {
+        showToast(`${event.badge} is needed for this shortcut.`);
+        return;
+      }
+      state.flags.shortcuts[event.id] = true;
+      state.player.x = event.to.x;
+      state.player.y = event.to.y;
+      playerMotion = null;
+      showCutsceneBanner("Shortcut Opened", event.text);
+      pushLog(event.text);
+      saveGame(false);
+      renderAll();
+      return;
+    }
+    if (event.type === "dungeon") {
+      openDungeon(event.dungeonId);
+      return;
+    }
     if (event.type === "postgame") {
       if (state.world.postgame && !state.world.legendarySeen) {
         startLegendarySignal(event);
@@ -2648,6 +3060,53 @@
       ended: false,
       forcedSwitch: false
     });
+  }
+
+  function useFieldAbilityAt(x, y) {
+    const secret = secretAt(x, y);
+    if (secret) return revealSecret(secret);
+    const tile = tileAt(x, y);
+    const ability = FIELD_ABILITIES.find((entry) => entry.tile === tile);
+    if (!ability || !hasFieldAbility(ability.id)) return "";
+    if (ability.id === "surf") {
+      state.player.x = x;
+      state.player.y = y;
+      state.player.steps += 1;
+      state.stats.fieldUses = (state.stats.fieldUses || 0) + 1;
+      addBond(fieldAbilityPartner(ability.id), 2);
+      showCutsceneBanner(ability.name, `${fieldAbilityPartner(ability.id).name} helped you cross the water.`);
+      pushLog(`${ability.name} opened a water path.`);
+      saveGame(false);
+      renderAll();
+      return "used";
+    }
+    return "";
+  }
+
+  function revealSecret(secret) {
+    if (state.flags.secrets[secret.id]) {
+      showToast(`${secret.title} already searched.`);
+      return "used";
+    }
+    if (!hasFieldAbility(secret.ability)) {
+      const ability = FIELD_ABILITIES.find((entry) => entry.id === secret.ability);
+      showDialog(secret.title, `${ability ? ability.name : "A field ability"} is needed here.`);
+      return "used";
+    }
+    state.flags.secrets[secret.id] = true;
+    state.stats.secretsFound = (state.stats.secretsFound || 0) + 1;
+    state.stats.fieldUses = (state.stats.fieldUses || 0) + 1;
+    applyQuestReward(secret.reward || {});
+    const partner = fieldAbilityPartner(secret.ability);
+    if (partner) {
+      addBond(partner, 3);
+      partner.mood = "Proud";
+    }
+    showCutsceneBanner(secret.title, secret.text);
+    pushLog(secret.text);
+    saveGame(false);
+    renderAll();
+    return "used";
   }
 
   function isPath(x, y) {
@@ -2739,12 +3198,14 @@
   }
 
   function isGateOpen(gate) {
+    if (gate.id === "neon-west" && hasFieldAbility("spark")) return true;
     if (gate.badge && !state.badges.includes(gate.badge)) return false;
     if (gate.trainer && !state.flags.trainers[gate.trainer]) return false;
     return true;
   }
 
   function isCityLocked(cityId) {
+    if (cityId === "neon" && hasFieldAbility("spark")) return false;
     const lock = CITY_LOCKS[cityId];
     if (!lock) return false;
     if (lock.badge && !state.badges.includes(lock.badge)) return true;
@@ -2846,6 +3307,13 @@
       tone(120, 0.035, "square");
       return;
     }
+    const spawn = overworldSpawnAt(nextX, nextY);
+    if (spawn) {
+      startVisibleSpawnBattle(spawn);
+      return;
+    }
+    const fieldResult = useFieldAbilityAt(nextX, nextY);
+    if (fieldResult === "used") return;
     if (isBlocked(nextX, nextY)) {
       tone(120, 0.035, "square");
       renderTopline();
@@ -2868,6 +3336,7 @@
     if (event) handleAuthoredEvent(event);
     if (state.player.steps % 12 === 0) addBond(activePokemon(), 1);
     if (state.player.steps % 48 === 0 && activePokemon()) showToast(`${activePokemon().name}'s bond grew.`);
+    maybePartnerMoment();
     discoverCurrentCity();
     if (state.player.steps % 8 === 0) saveGame(false);
     renderTopline();
@@ -2968,7 +3437,7 @@
     return createPokemon(chosen.id, randomInt(min, max));
   }
 
-  function encounterTableFor(area, encounters) {
+  function encounterTableFor(area, encounters, includeOutbreak = true) {
     const table = [...(encounters[area] || encounters.meadow)];
     const weather = state.world.weather || "clear";
     if (weather === "rain" && area === "coast") table.push({ id: 147, weight: 2, min: 12, max: 18 });
@@ -2976,7 +3445,29 @@
     if (weather === "spark" && area === "meadow") table.push({ id: 25, weight: 8, min: 8, max: 16 });
     if (timeOfDay() === "night") table.push({ id: 41, weight: 5, min: 6, max: 18 });
     if (state.world.postgame) table.push({ id: 143, weight: 1, min: 42, max: 48 });
+    const outbreak = includeOutbreak ? outbreakSpecies() : null;
+    const zone = zoneAt(state.player.x, state.player.y);
+    if (outbreak && zone && zone.id === outbreak.zoneId) table.push({ id: outbreak.id, weight: 18, min: Math.max(8, partyAverageLevel() - 4), max: Math.max(14, partyAverageLevel() + 2) });
+    const nearbyCity = nearestCityForRoute();
+    if (nearbyCity && CITY_EXCLUSIVE_SPECIES[nearbyCity.id]) table.push({ id: CITY_EXCLUSIVE_SPECIES[nearbyCity.id], weight: 4, min: 10, max: 24 });
     return table;
+  }
+
+  function nearestCityForRoute() {
+    const zone = zoneAt(state.player.x, state.player.y);
+    if (!zone) return cityAt(state.player.x, state.player.y);
+    let best = CITY_DEFS[0];
+    let bestDistance = Infinity;
+    CITY_DEFS.forEach((city) => {
+      const dx = city.x + city.w / 2 - (zone.x + zone.w / 2);
+      const dy = city.y + city.h / 2 - (zone.y + zone.h / 2);
+      const distance = dx * dx + dy * dy;
+      if (distance < bestDistance) {
+        best = city;
+        bestDistance = distance;
+      }
+    });
+    return best;
   }
 
   function interact() {
@@ -2993,6 +3484,7 @@
       enterInterior(building);
       return;
     }
+    if (useFieldAbilityAt(target.x, target.y) === "used") return;
     showDialog("", "The route hums quietly.");
   }
 
@@ -3130,7 +3622,9 @@
     else if (building.kind === "market") marketRestock(building);
     else if (building.kind === "lab") professorGift();
     else if (building.kind === "gym") {
-      if (!state.flags.trainers[building.trainerId] && !state.flags.puzzles[building.trainerId]) {
+      if (state.flags.trainers[building.trainerId]) {
+        startGymRematch(building.trainerId);
+      } else if (!state.flags.puzzles[building.trainerId]) {
         openGymPuzzle(building.trainerId);
       } else {
         startTrainerBattle(building.trainerId);
@@ -3232,6 +3726,144 @@
     }, 820);
   }
 
+  function openDungeon(dungeonId) {
+    const dungeon = DUNGEONS[dungeonId];
+    if (!dungeon) return;
+    if (dungeon.minBadges && state.badges.length < dungeon.minBadges) {
+      showDialog(dungeon.title, `Bring ${dungeon.minBadges} badges before exploring this site.`);
+      return;
+    }
+    const progress = state.flags.dungeons[dungeonId] || 0;
+    if (progress >= dungeon.rooms.length) {
+      showDialog(dungeon.title, "This site is cleared. Its shortcut data is already on your map.");
+      return;
+    }
+    currentDungeon = { dungeonId, choices: [] };
+    renderDungeon(false);
+    els.puzzleModal.hidden = false;
+    tone(294, 0.06, "triangle");
+  }
+
+  function renderDungeon(solved) {
+    if (!currentDungeon) return;
+    const dungeon = DUNGEONS[currentDungeon.dungeonId];
+    const progress = state.flags.dungeons[currentDungeon.dungeonId] || 0;
+    const room = dungeon.rooms[progress] || dungeon.rooms[dungeon.rooms.length - 1];
+    const choices = currentDungeon.choices || [];
+    els.puzzleKicker.textContent = `Dungeon ${progress + 1}/${dungeon.rooms.length}`;
+    els.puzzleTitle.textContent = solved ? "Path Cleared" : dungeon.title;
+    els.puzzleText.textContent = solved ? `${room} Complete.` : room;
+    const progressHtml = dungeon.sequence.map((step, index) => `
+      <span class="puzzle-step ${choices[index] ? "is-filled" : ""} ${solved ? "is-solved" : ""}">${choices[index] || index + 1}</span>
+    `).join("");
+    const buttons = dungeon.options.map((option) => `
+      <button type="button" data-dungeon-choice="${option}" ${solved ? "disabled" : ""}>
+        <strong>${option}</strong>
+        <span>${choices.includes(option) ? "Set" : "Route"}</span>
+      </button>
+    `).join("");
+    els.puzzleGrid.innerHTML = `
+      <div class="puzzle-progress">${progressHtml}</div>
+      ${buttons}
+    `;
+  }
+
+  function chooseDungeonStep(choice) {
+    if (!currentDungeon) return;
+    const dungeon = DUNGEONS[currentDungeon.dungeonId];
+    const expected = dungeon.sequence[currentDungeon.choices.length];
+    currentDungeon.choices.push(choice);
+    if (choice !== expected) {
+      currentDungeon.choices = [];
+      renderDungeon(false);
+      showToast("The dungeon route resets.");
+      tone(120, 0.06, "square");
+      return;
+    }
+    if (currentDungeon.choices.length < dungeon.sequence.length) {
+      renderDungeon(false);
+      tone(440, 0.045, "triangle");
+      return;
+    }
+    const dungeonId = currentDungeon.dungeonId;
+    state.flags.dungeons[dungeonId] = (state.flags.dungeons[dungeonId] || 0) + 1;
+    renderDungeon(true);
+    pushLog(`${dungeon.title}: room ${state.flags.dungeons[dungeonId]} cleared.`);
+    if (state.flags.dungeons[dungeonId] >= dungeon.rooms.length) {
+      applyQuestReward(dungeon.reward || {});
+      changeRelationship("towns", 3);
+      showCutsceneBanner("Dungeon Cleared", `${dungeon.title} revealed its boss chamber.`);
+      saveGame(false);
+      window.setTimeout(() => {
+        els.puzzleModal.hidden = true;
+        currentDungeon = null;
+        startDungeonBoss(dungeonId);
+      }, 820);
+      return;
+    }
+    saveGame(false);
+    window.setTimeout(() => {
+      if (!currentDungeon || currentDungeon.dungeonId !== dungeonId) return;
+      currentDungeon.choices = [];
+      renderDungeon(false);
+    }, 560);
+  }
+
+  function startDungeonBoss(dungeonId) {
+    const dungeon = DUNGEONS[dungeonId];
+    if (!dungeon || !dungeon.boss) return;
+    const team = dungeon.boss.team.map((entry) => createPokemon(entry.id, entry.level));
+    team.forEach((pokemon) => markSeen(pokemon.speciesId));
+    startBattle({
+      kind: "trainer",
+      trainerId: `dungeon-${dungeonId}`,
+      trainerName: dungeon.boss.name,
+      reward: dungeon.boss.reward,
+      badge: "",
+      badgeText: "",
+      enemies: team,
+      enemyIndex: 0,
+      trainerItems: 1,
+      strategy: dungeon.boss.strategy || "balanced",
+      dungeonId,
+      log: [`${dungeon.boss.name} guards the heart of ${dungeon.title}.`],
+      locked: false,
+      ended: false,
+      forcedSwitch: false
+    });
+  }
+
+  function startGymRematch(trainerId) {
+    const gym = GYM_DEFS.find((entry) => entry.trainerId === trainerId);
+    const trainer = editionTrainer(trainerId);
+    if (!gym || !trainer) return;
+    if (!state.world.postgame && state.badges.length < GYM_DEFS.length) {
+      showDialog(trainer.name, trainerAfterLine(trainerId));
+      return;
+    }
+    const count = state.flags.rematches[trainerId] || 0;
+    const levelBoost = 12 + count * 3;
+    const team = trainer.team.map((entry) => createPokemon(entry.id, clamp(entry.level + levelBoost, 1, 100)));
+    team.forEach((pokemon) => markSeen(pokemon.speciesId));
+    startBattle({
+      kind: "trainer",
+      trainerId: `rematch-${trainerId}-${count}`,
+      trainerName: `${trainer.name} Rematch`,
+      reward: trainer.reward + 900 + count * 240,
+      badge: "",
+      badgeText: "",
+      enemies: team,
+      enemyIndex: 0,
+      trainerItems: 2,
+      strategy: trainerStrategyFor(trainerId, trainer),
+      rematchTrainerId: trainerId,
+      log: [`${trainer.name} accepts a champion rematch in ${cityName(gym.cityId)}.`],
+      locked: false,
+      ended: false,
+      forcedSwitch: false
+    });
+  }
+
   function localHouseLine(cityId) {
     const lines = {
       lumen: "Professor Maple says the first brave step is usually just leaving town.",
@@ -3249,6 +3881,7 @@
   }
 
   function marketRumor() {
+    if (currentInterior && currentInterior.cityId) return cityIdentity(currentInterior.cityId).rumor;
     if (state.badges.length >= 8) return "Everyone is buying extra potions for Crown City. Something big is ending there.";
     if (state.badges.length >= 5) return "Umbra grunts keep asking for batteries and dark cloth. Subtle, they are not.";
     return "Fresh trainers do best when they buy before they need supplies.";
@@ -3285,7 +3918,7 @@
     if (state.badges.length >= 8) state.bag.circuit += 1;
     changeRelationship("towns", 1);
     pushLog(`Restocked in ${city}.`);
-    showDialog("Market Clerk", `You spent $${cost} and stocked ${balls} balls, ${potions} potions, and circuit materials.`);
+    showDialog(cityIdentity(building.cityId).shop, `You spent $${cost} and stocked ${balls} balls, ${potions} potions, and circuit materials.`);
     saveGame(false);
     renderAll();
     tone(622, 0.07, "triangle");
@@ -3301,9 +3934,40 @@
       showDialog("League Desk", "Crown Station is dark. Stop Team Umbra before the desk can certify challengers.");
       return;
     }
-    showFinish("Crown League Ready", "Eight badges, a stopped blackout, and a rival waiting at the gate. PokeG's grand circuit is open for the next chapter.");
-    pushLog("Crown League certification unlocked.");
+    state.world.postgame = true;
+    if ((state.world.championRank || 0) < ELITE_LADDER.length) {
+      startEliteChallenge();
+      return;
+    }
+    showFinish("Regional Champion", "The elite ladder is complete. Gym rematches, dungeon clears, roaming bosses, and rare crafting now define the champion loop.");
+    pushLog("Regional champion rank confirmed.");
     saveGame(false);
+  }
+
+  function startEliteChallenge() {
+    const rank = state.world.championRank || 0;
+    const entry = ELITE_LADDER[rank];
+    if (!entry) return;
+    const team = entry.team.map((member) => createPokemon(member.id, member.level));
+    team.forEach((pokemon) => markSeen(pokemon.speciesId));
+    showCutsceneBanner("Elite Ladder", `${entry.name} steps onto the Crown arena.`);
+    startBattle({
+      kind: "trainer",
+      trainerId: `elite-${rank}`,
+      trainerName: entry.name,
+      reward: entry.reward,
+      badge: "",
+      badgeText: "",
+      enemies: team,
+      enemyIndex: 0,
+      trainerItems: 2,
+      strategy: entry.strategy,
+      ladderRank: rank,
+      log: [`${entry.name} challenges your champion credentials.`],
+      locked: false,
+      ended: false,
+      forcedSwitch: false
+    });
   }
 
   function startTrainerBattle(trainerId) {
@@ -3343,11 +4007,41 @@
       enemies: team,
       enemyIndex: 0,
       trainerItems: trainer.gymRank || trainer.story ? 1 : 0,
-      log: [trainer.intro],
+      strategy: trainerStrategyFor(trainerId, trainer),
+      log: [trainer.intro, ...battleFlavorLines(trainerId, trainer)],
       locked: false,
       ended: false,
       forcedSwitch: false
     });
+  }
+
+  function trainerStrategyFor(trainerId, trainer) {
+    if (trainer.strategy) return trainer.strategy;
+    if (trainerId.startsWith("rival")) return "adaptive";
+    if (trainerId.startsWith("umbra")) return "status";
+    if (trainer.gymRank) {
+      const gym = GYM_DEFS.find((entry) => entry.trainerId === trainerId);
+      if (["rock", "ice"].includes(gym.type)) return "stall";
+      if (["electric", "fire", "psychic"].includes(gym.type)) return "sweeper";
+      if (["poison", "grass"].includes(gym.type)) return "status";
+    }
+    return "balanced";
+  }
+
+  function battleFlavorLines(trainerId, trainer) {
+    const lines = [];
+    if (trainerId.startsWith("rival")) {
+      const stage = Math.max(state.world.rivalStage || 0, trainer.rank || 1);
+      state.world.rivalStage = stage;
+      lines.push(`Jules studies your lead before choosing a counter plan.`);
+    }
+    if (trainerId.startsWith("gym-")) {
+      const gym = GYM_DEFS.find((entry) => entry.trainerId === trainerId);
+      if (gym) lines.push(`${gym.leader}'s ${gym.type} arena rule is active: matching-type moves hit with extra confidence.`);
+    }
+    if (trainerId.startsWith("umbra")) lines.push("Umbra tech distorts the field; status moves feel sharper.");
+    if (trainer.strategy) lines.push(`${trainer.name} favors a ${trainer.strategy} battle rhythm.`);
+    return lines;
   }
 
   function trainerTeam(trainerId) {
@@ -3506,6 +4200,7 @@
         <div class="stat-line"><span>HP</span><span>${pokemon.hp}/${pokemon.maxHp}</span></div>
         <div class="hp-track"><div class="hp-fill ${hp < 34 ? "low" : ""}" style="width:${hp}%"></div></div>
         <div class="stat-line"><span>${pokemon.personality || personalityFor(pokemon.speciesId)}</span><span>Bond ${pokemon.bond || 0}</span></div>
+        <div class="stat-line"><span>${pokemon.mood || "Ready"}</span><span>${pokemon.heldItem || "No item"}</span></div>
       </div>
       <div class="battle-sprite">
         ${spriteBattle(pokemon, side)}
@@ -3542,7 +4237,11 @@
   function performTurnOrder(playerFirst, playerMove, enemyMove) {
     const battle = state.battle;
     const player = activePokemon();
-    const enemy = battleEnemy();
+    let enemy = battleEnemy();
+    if (battle.kind === "trainer" && maybeTrainerSwitch(player, battle.log)) {
+      enemy = battleEnemy();
+      enemyMove = chooseMove(enemy, player);
+    }
     if (battle.kind === "trainer" && maybeTrainerUseItem(enemy, battle.log)) {
       battle.log.push(...applyEndTurnEffects());
       if (resolveEndTurnFaints()) return;
@@ -3626,7 +4325,10 @@
     const bondCrit = attacker === activePokemon() && (attacker.bond || 0) >= 72 && Math.random() < 0.025;
     const critical = bondCrit || Math.random() < Math.min(0.22, 0.055 + effectiveStat(attacker, "speed") / 950);
     const bondBoost = attacker === activePokemon() ? 1 + Math.min(0.08, (attacker.bond || 0) / 1250) : 1;
-    const raw = (((2 * attacker.level / 5 + 2) * move.power * attack / defense) / 50 + 2) * stab * typeMod * variance * (critical ? 1.7 : 1) * bondBoost;
+    const itemBoost = attacker.heldItem === "Focus Charm" && typeMod >= 1 ? 1.08 : 1;
+    const moodBoost = attacker.mood === "Energized" && move.priority ? 1.1 : attacker.mood === "Confident" && critical ? 1.08 : 1;
+    const arenaBoost = gymArenaBoost(attacker, move);
+    const raw = (((2 * attacker.level / 5 + 2) * move.power * attack / defense) / 50 + 2) * stab * typeMod * variance * (critical ? 1.7 : 1) * bondBoost * itemBoost * moodBoost * arenaBoost;
     const damage = typeMod === 0 ? 0 : Math.max(1, Math.floor(raw));
     defender.hp = clamp(defender.hp - damage, 0, defender.maxHp);
     if (damage === 0) lines.push("It had no effect.");
@@ -3637,6 +4339,7 @@
     if (typeMod > 1) lines.push("It was super effective.");
     if (typeMod > 0 && typeMod < 1) lines.push("It was not very effective.");
     if (critical && damage > 0) lines.push("A critical hit.");
+    if (arenaBoost > 1 && damage > 0) lines.push("The arena amplified the move.");
     if (damage > 0 && move.status && !defender.status && Math.random() < move.statusChance) {
       defender.status = move.status;
       lines.push(`${defender.name} was ${move.status}.`);
@@ -3667,10 +4370,25 @@
     return lines;
   }
 
+  function gymArenaBoost(attacker, move) {
+    const battle = state.battle;
+    if (!battle || !battle.trainerId || !battle.trainerId.startsWith("gym-")) return 1;
+    const gym = GYM_DEFS.find((entry) => entry.trainerId === battle.trainerId);
+    if (!gym || move.type !== gym.type) return 1;
+    return attacker === activePokemon() ? 1.04 : 1.08;
+  }
+
   function canActThisTurn(pokemon) {
     if (!pokemon || !pokemon.status) return true;
     if (pokemon.status === "paralyzed") return Math.random() > 0.25;
     if (pokemon.status === "frosted") return Math.random() > 0.18;
+    if (pokemon.status === "sleeping") return Math.random() > 0.5;
+    if (pokemon.status === "confused") {
+      if (Math.random() < 0.18) {
+        pokemon.hp = clamp(pokemon.hp - Math.max(1, Math.floor(pokemon.maxHp / 16)), 0, pokemon.maxHp);
+        return false;
+      }
+    }
     return true;
   }
 
@@ -3704,6 +4422,38 @@
     lines.push(`${battle.trainerName} used a Hyper Potion.`);
     lines.push(`${enemy.name} recovered ${healed} HP.`);
     return true;
+  }
+
+  function maybeTrainerSwitch(player, lines) {
+    const battle = state.battle;
+    if (!battle || battle.kind !== "trainer" || battle.switchedThisTurn || !player) return false;
+    const current = battleEnemy();
+    if (!current || current.hp <= 0 || battle.enemies.length <= 1) return false;
+    const strategy = battle.strategy || "balanced";
+    const pressure = current.hp < current.maxHp * (strategy === "adaptive" ? 0.5 : 0.32);
+    if (!pressure && strategy !== "adaptive") return false;
+    let bestIndex = battle.enemyIndex;
+    let bestScore = bestMatchupScore(current, player);
+    battle.enemies.forEach((candidate, index) => {
+      if (index === battle.enemyIndex || candidate.hp <= 0) return;
+      const score = bestMatchupScore(candidate, player) + (candidate.hp / candidate.maxHp) * 12;
+      if (score > bestScore + 8) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+    if (bestIndex === battle.enemyIndex) return false;
+    battle.enemyIndex = bestIndex;
+    battle.switchedThisTurn = true;
+    lines.push(`${battle.trainerName} switched to ${battleEnemy().name}.`);
+    return true;
+  }
+
+  function bestMatchupScore(attacker, defender) {
+    return (attacker.moves || ["tackle"]).reduce((best, key) => {
+      const move = MOVES[key] || MOVES.tackle;
+      return Math.max(best, (move.power || 24) * typeModifier(move.type, typesOf(defender)));
+    }, 0);
   }
 
   function handleEnemyFainted() {
@@ -3752,9 +4502,27 @@
     if (result === "win") {
       if (battle.kind === "trainer") {
         state.money += battle.reward || 0;
+        state.stats.trainerWins = (state.stats.trainerWins || 0) + 1;
+        state.world.renown = (state.world.renown || 0) + (battle.badge ? 8 : battle.trainerId && battle.trainerId.startsWith("rival") ? 5 : 3);
         state.flags.trainers[battle.trainerId] = true;
         battle.log.push(`You won $${battle.reward}.`);
         runCutscene(`${battle.trainerId}-win`, battle);
+        if (battle.dungeonId) {
+          battle.finishTitle = `${DUNGEONS[battle.dungeonId].title} Cleared`;
+          battle.finishText = "The dungeon is mapped, its shortcut data is saved, and its rewards have been added to the champion journal.";
+          pushLog(`${DUNGEONS[battle.dungeonId].title} boss defeated.`);
+        }
+        if (Number.isFinite(battle.ladderRank)) {
+          state.world.championRank = Math.max(state.world.championRank || 0, battle.ladderRank + 1);
+          battle.finishTitle = battle.ladderRank + 1 >= ELITE_LADDER.length ? "Regional Champion" : "Elite Win Registered";
+          battle.finishText = battle.ladderRank + 1 >= ELITE_LADDER.length ? "You cleared the elite ladder and became the region's active champion." : "The next elite challenger is ready at the Crown League desk.";
+          pushLog(`${battle.trainerName} cleared on the elite ladder.`);
+        }
+        if (battle.rematchTrainerId) {
+          state.flags.rematches[battle.rematchTrainerId] = (state.flags.rematches[battle.rematchTrainerId] || 0) + 1;
+          battle.finishTitle = "Rematch Won";
+          battle.finishText = `${battle.trainerName} logged a stronger rematch team for future champion runs.`;
+        }
         if (battle.badge && !state.badges.includes(battle.badge)) {
           state.badges.push(battle.badge);
           battle.log.push(`${battle.badge} earned.`);
@@ -3764,6 +4532,7 @@
         pushLog(`Defeated ${battle.trainerName}.`);
         handleStoryAfterBattle(battle);
       } else {
+        state.stats.wildWins = (state.stats.wildWins || 0) + 1;
         pushLog(`Defeated a wild ${battle.enemy.name}.`);
       }
       state.party.filter((pokemon) => pokemon.hp > 0).forEach((pokemon) => addBond(pokemon, battle.kind === "trainer" ? 2 : 1));
@@ -3786,6 +4555,7 @@
       state.bag.shards += 1;
       changeRelationship("umbra", 5);
       battle.log.push("You recovered a supply ball from Team Umbra.");
+      if (battle.trainerId === "umbra-bracken") runStoryChapter("chapter-umbra-reveal");
     }
     if (battle.trainerId.startsWith("rival")) changeRelationship("rival", 5);
     if (battle.trainerId.startsWith("gym-")) {
@@ -3795,6 +4565,7 @@
     if (trainer.gymRank && trainer.gymRank === GYM_DEFS.length) {
       battle.finishTitle = "Circuit Complete";
       battle.finishText = "Eight badges are yours. Crown City is ready, but Team Umbra still has the station lights under their control.";
+      runStoryChapter("chapter-crown-blackout");
     }
     if (battle.trainerId === "umbra-boss") {
       battle.finishTitle = "Crown Lights Restored";
@@ -3802,6 +4573,7 @@
       state.money += 500;
       state.bag.circuit += 2;
       changeRelationship("towns", 8);
+      runStoryChapter("chapter-champion-loop");
     }
   }
 
@@ -3839,6 +4611,7 @@
   }
 
   function renderAfterBattleAction() {
+    if (state.battle) state.battle.switchedThisTurn = false;
     renderAll();
     saveGame(false);
   }
@@ -3974,13 +4747,16 @@
 
   function chooseMove(attacker, defender) {
     const options = attacker.moves.length ? attacker.moves : ["tackle"];
+    const strategy = state.battle && state.battle.kind === "trainer" && attacker === battleEnemy() ? state.battle.strategy || "balanced" : "wild";
     let best = options[0];
     let bestScore = -1;
     options.forEach((key) => {
       const move = MOVES[key] || MOVES.tackle;
-      const statusBonus = move.status && !defender.status ? 18 : 0;
-      const lowHpDrain = move.drain && attacker.hp < attacker.maxHp * 0.45 ? 24 : 0;
-      const score = (move.power || 16) * typeModifier(move.type, typesOf(defender)) * (typesOf(attacker).includes(move.type) ? 1.2 : 1) + statusBonus + lowHpDrain + Math.random() * 16;
+      const statusBonus = move.status && !defender.status ? (strategy === "status" || strategy === "stall" ? 34 : 18) : 0;
+      const lowHpDrain = move.drain && attacker.hp < attacker.maxHp * 0.45 ? (strategy === "stall" ? 38 : 24) : 0;
+      const sweeperBonus = strategy === "sweeper" && move.power ? 16 : 0;
+      const adaptiveBonus = strategy === "adaptive" ? typeModifier(move.type, typesOf(defender)) * 12 : 0;
+      const score = (move.power || 16) * typeModifier(move.type, typesOf(defender)) * (typesOf(attacker).includes(move.type) ? 1.2 : 1) + statusBonus + lowHpDrain + sweeperBonus + adaptiveBonus + Math.random() * 16;
       if (score > bestScore) {
         best = key;
         bestScore = score;
@@ -4056,6 +4832,9 @@
       ability: abilityFor(speciesId),
       personality: personalityFor(speciesId),
       bond: 8,
+      mood: "Ready",
+      heldItem: "",
+      training: { attack: 0, defense: 0, speed: 0 },
       stages: { attack: 0, defense: 0, speed: 0 }
     };
     recalcPokemon(pokemon, false);
@@ -4068,9 +4847,9 @@
     const level = pokemon.level;
     pokemon.maxHp = Math.floor(((species.base.hp * 2 * level) / 100) + level + 10);
     pokemon.stats = {
-      attack: Math.floor(((species.base.attack * 2 * level) / 100) + 5),
-      defense: Math.floor(((species.base.defense * 2 * level) / 100) + 5),
-      speed: Math.floor(((species.base.speed * 2 * level) / 100) + 5)
+      attack: Math.floor(((species.base.attack * 2 * level) / 100) + 5 + (pokemon.training ? pokemon.training.attack || 0 : 0)),
+      defense: Math.floor(((species.base.defense * 2 * level) / 100) + 5 + (pokemon.training ? pokemon.training.defense || 0 : 0)),
+      speed: Math.floor(((species.base.speed * 2 * level) / 100) + 5 + (pokemon.training ? pokemon.training.speed || 0 : 0))
     };
     pokemon.hp = preserveHp ? clamp((pokemon.hp || pokemon.maxHp) + (pokemon.maxHp - oldMax), 0, pokemon.maxHp) : pokemon.maxHp;
     pokemon.stages = pokemon.stages || { attack: 0, defense: 0, speed: 0 };
@@ -4202,6 +4981,15 @@
     pokemon.bond = clamp((pokemon.bond || 0) + amount, 0, 100);
   }
 
+  function typeColor(type) {
+    const colors = {
+      normal: "#8d8b7f", fire: "#e35d3e", water: "#3398c8", electric: "#d8a91b", grass: "#3f9a54", ice: "#5abfc8",
+      fighting: "#b54c38", poison: "#8e55b7", ground: "#b08a42", flying: "#708bd3", psychic: "#dc5c94", bug: "#7c9c37",
+      rock: "#8a7a43", ghost: "#66508f", dragon: "#6a58d8", dark: "#5f504b", steel: "#6f8491", fairy: "#d87fb0"
+    };
+    return colors[type] || "#3d4a56";
+  }
+
   function typeStrip(types) {
     return `<div class="type-strip">${types.map((type) => `<span class="type-badge type-${type}">${type}</span>`).join("")}</div>`;
   }
@@ -4269,6 +5057,113 @@
       els.cutsceneBanner.classList.remove("is-visible");
       els.cutsceneBanner.hidden = true;
     }, 3600);
+  }
+
+  function runStoryChapter(id) {
+    if (state.flags.cutscenes[id]) return;
+    const scenes = CINEMATIC_CHAPTERS[id];
+    if (!scenes || !scenes.length) return;
+    state.flags.cutscenes[id] = true;
+    scenes.forEach((scene, index) => {
+      window.setTimeout(() => {
+        if (scene.focus) cinematicCamera = { ...scene.focus, until: performance.now() + 2300 };
+        showCutsceneBanner(scene.title, scene.text);
+        if (index === scenes.length - 1) {
+          pushLog(`${scene.title} cinematic completed.`);
+          saveGame(false);
+        }
+      }, index * 2100);
+    });
+  }
+
+  function objectiveMarker() {
+    if (!state.party.length) return null;
+    if (!state.flags.mapleGift) return { x: 12, y: 10, title: `${getEdition().professor}'s Lab` };
+    if (!state.flags.trainers["rival-lumen"]) return { x: 24, y: 10, title: "Jules on Sunpetal Route" };
+    if (state.badges.length >= 1 && !state.flags.trainers["umbra-bracken"]) return { x: 44, y: 12, title: "Umbra Bracken Roadblock" };
+    if (state.badges.length >= 3 && !state.flags.trainers["umbra-quarry"]) return { x: 70, y: 12, title: "Umbra Cable Road" };
+    if (state.badges.length >= 5 && !state.flags.trainers["umbra-admin"]) return { x: 48, y: 33, title: "Astral Umbra Trail" };
+    if (state.badges.length >= 8 && !state.flags.trainers["umbra-boss"]) return { x: 78, y: 54, title: "Crown Signal Core" };
+    if (state.flags.trainers["umbra-boss"] && !state.flags.trainers["rival-crown"]) return { x: 66, y: 59, title: "Crown Gate Rival Battle" };
+    if (state.world.postgame && !state.world.legendarySeen) return { x: 76, y: 58, title: LEGENDARY_SIGNAL.title };
+    const gym = nextGymChallenge();
+    if (gym) {
+      const city = cityById(gym.cityId);
+      return { x: city.x + Math.floor(city.w / 2), y: city.y + Math.floor(city.h / 2), title: gym.badge };
+    }
+    return { x: 76, y: 60, title: "Crown League" };
+  }
+
+  function directionTo(x, y) {
+    const dx = x - state.player.x;
+    const dy = y - state.player.y;
+    if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? "east" : "west";
+    if (dy !== 0) return dy > 0 ? "south" : "north";
+    return "here";
+  }
+
+  function distanceTo(x, y) {
+    return Math.abs(x - state.player.x) + Math.abs(y - state.player.y);
+  }
+
+  function secretAt(x, y) {
+    return SECRET_SITES.find((site) => rectContains(site, x, y));
+  }
+
+  function hasFieldAbility(abilityId) {
+    const ability = FIELD_ABILITIES.find((entry) => entry.id === abilityId);
+    if (!ability) return false;
+    return state.party.some((pokemon) => typesOf(pokemon).some((type) => ability.types.includes(type)));
+  }
+
+  function fieldAbilityPartner(abilityId) {
+    const ability = FIELD_ABILITIES.find((entry) => entry.id === abilityId);
+    if (!ability) return activePokemon();
+    return state.party.find((pokemon) => typesOf(pokemon).some((type) => ability.types.includes(type))) || activePokemon();
+  }
+
+  function partnerMoment(pokemon) {
+    if (!pokemon) return "Your party is waiting for its first story.";
+    const type = typesOf(pokemon)[0];
+    if (pokemon.hp <= Math.floor(pokemon.maxHp * 0.25)) return `${pokemon.name} is trying to look brave, but needs a heal.`;
+    if ((pokemon.bond || 0) >= 70) return `${pokemon.name} keeps pace beside you and watches the road.`;
+    if (state.world.weather === "rain" && type === "water") return `${pokemon.name} perks up in the rain.`;
+    if (state.world.weather === "spark" && type === "electric") return `${pokemon.name}'s cheeks crackle near the relay lines.`;
+    if (timeOfDay() === "night" && ["ghost", "psychic", "dark"].includes(type)) return `${pokemon.name} senses movement in the dark routes.`;
+    return `${pokemon.name} is ${pokemon.mood || "ready"} and listening for field signals.`;
+  }
+
+  function maybePartnerMoment() {
+    const partner = activePokemon();
+    if (!partner || state.player.steps - (state.world.lastPartnerMoment || 0) < 40) return;
+    const secret = SECRET_SITES.find((site) => !state.flags.secrets[site.id] && hasFieldAbility(site.ability) && distanceTo(site.x, site.y) < 8);
+    if (secret) {
+      state.world.lastPartnerMoment = state.player.steps;
+      showToast(`${partner.name} senses something near ${secret.title}.`);
+      return;
+    }
+    if (Math.random() < 0.22) {
+      state.world.lastPartnerMoment = state.player.steps;
+      showToast(partnerMoment(partner));
+    }
+  }
+
+  function outbreakSpecies() {
+    if (!state.party.length) return null;
+    const zone = WILD_ZONES[(state.world.day + state.badges.length + state.world.weatherSeed) % WILD_ZONES.length];
+    const table = encounterTableFor(zone.encounter, getEdition().encounters, false).filter((entry) => SPECIES.has(entry.id));
+    const entry = table[(state.world.day + state.player.steps) % Math.max(1, table.length)];
+    if (!entry) return null;
+    return { id: entry.id, name: speciesOf(entry.id).name, route: zone.name, zoneId: zone.id };
+  }
+
+  function trainerCardRank() {
+    const score = state.badges.length * 12 + state.dexCaught.length + Object.keys(state.flags.secrets || {}).length * 8 + (state.world.championRank || 0) * 18;
+    if (score >= 150) return "Crown Black";
+    if (score >= 105) return "Gold";
+    if (score >= 70) return "Silver";
+    if (score >= 35) return "Bronze";
+    return "Rookie";
   }
 
   function isLocked() {
@@ -4402,6 +5297,7 @@
       event.preventDefault();
       els.puzzleModal.hidden = true;
       currentPuzzle = null;
+      currentDungeon = null;
       return;
     }
     if (key === "escape" && !els.interiorModal.hidden) {
@@ -4540,9 +5436,19 @@
       craftRecipe(craft.dataset.craft);
       return;
     }
+    const growth = event.target.closest("[data-growth-action]");
+    if (growth) {
+      applyGrowthAction(growth.dataset.growthAction);
+      return;
+    }
     const puzzleChoice = event.target.closest("[data-puzzle-choice]");
     if (puzzleChoice) {
       choosePuzzleStep(puzzleChoice.dataset.puzzleChoice);
+      return;
+    }
+    const dungeonChoice = event.target.closest("[data-dungeon-choice]");
+    if (dungeonChoice) {
+      chooseDungeonStep(dungeonChoice.dataset.dungeonChoice);
       return;
     }
     const profileLoad = event.target.closest("[data-profile-load]");
@@ -4602,6 +5508,9 @@
           <div><strong>Ability</strong><span>${pokemon.ability || abilityFor(pokemon.speciesId)}</span></div>
           <div><strong>Nature</strong><span>${pokemon.personality || personalityFor(pokemon.speciesId)}</span></div>
           <div><strong>Bond</strong><span>${pokemon.bond || 0}/100</span></div>
+          <div><strong>Mood</strong><span>${pokemon.mood || "Ready"}</span></div>
+          <div><strong>Held Item</strong><span>${pokemon.heldItem || "None"}</span></div>
+          <div><strong>Training</strong><span>A${pokemon.training ? pokemon.training.attack || 0 : 0} / D${pokemon.training ? pokemon.training.defense || 0 : 0} / S${pokemon.training ? pokemon.training.speed || 0 : 0}</span></div>
           <div><strong>Status</strong><span>${pokemon.status || "OK"}</span></div>
           <div><strong>Caught</strong><span>${pokemon.caughtAt || "Unknown"}</span></div>
         </div>
@@ -4667,6 +5576,7 @@
   els.puzzleCloseButton.addEventListener("click", () => {
     els.puzzleModal.hidden = true;
     currentPuzzle = null;
+    currentDungeon = null;
   });
   els.menuButton.addEventListener("click", () => toggleMenu());
   els.mapButton.addEventListener("click", showRegionMap);
