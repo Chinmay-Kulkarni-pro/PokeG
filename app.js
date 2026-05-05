@@ -1308,6 +1308,18 @@
       relationships: { rival: 0, professor: 0, leaders: 0, umbra: 0, towns: 0 },
       world: { day: 1, weather: "clear", weatherSeed: randomInt(1, 9999), discovered: ["lumen", "bracken"], postgame: false, dynamicEvents: [], legendarySeen: false, championRank: 0, spawnSalt: randomInt(1, 9999), renown: 0, rivalStage: 0, lastPartnerMoment: 0 },
       stats: { trainerWins: 0, wildWins: 0, secretsFound: 0, fieldUses: 0, shinySeen: 0 },
+      memory: {
+        healsByCity: {},
+        catchesBySpecies: {},
+        catchesByRoute: {},
+        movesByType: {},
+        leadWins: {},
+        rivalCounters: {},
+        leaderMentors: {},
+        routeTransforms: {},
+        hall: [],
+        rumors: []
+      },
       playtime: 0,
       log: [],
       battle: null,
@@ -1345,6 +1357,12 @@
     });
     merged.world = { ...base.world, ...(save.world || {}) };
     merged.stats = { ...base.stats, ...(save.stats || {}) };
+    merged.memory = { ...base.memory, ...(save.memory || {}) };
+    ["healsByCity", "catchesBySpecies", "catchesByRoute", "movesByType", "leadWins", "rivalCounters", "leaderMentors", "routeTransforms"].forEach((key) => {
+      merged.memory[key] = { ...(base.memory[key] || {}), ...((save.memory && save.memory[key]) || {}) };
+    });
+    merged.memory.hall = Array.isArray(save.memory && save.memory.hall) ? save.memory.hall.slice(0, 18) : [];
+    merged.memory.rumors = Array.isArray(save.memory && save.memory.rumors) ? save.memory.rumors.slice(0, 12) : [];
     merged.playtime = Math.max(0, save.playtime || 0);
     merged.party = Array.isArray(save.party) ? save.party.map(revivePokemon).filter(Boolean) : [];
     merged.pc = Array.isArray(save.pc) ? save.pc.map(revivePokemon).filter(Boolean) : [];
@@ -1697,6 +1715,7 @@
       <div class="partner-moment">
         <strong>${escapeHtml(activePokemon().name)}</strong>
         <span>${escapeHtml(partnerMoment(activePokemon()))}</span>
+        <small>${escapeHtml(partnerArcLine(activePokemon()))}</small>
       </div>
       <div class="field-ability-list">
         ${FIELD_ABILITIES.map((ability) => `<span class="${hasFieldAbility(ability.id) ? "is-active" : ""}">${ability.name}</span>`).join("")}
@@ -1933,6 +1952,11 @@
     `).join("");
     const foundSecrets = Object.keys(state.flags.secrets || {}).length;
     const trainerRank = trainerCardRank();
+    const style = trainerStyleProfile();
+    const ecosystem = ecosystemProfile();
+    const memoryRows = memoryHighlights().map((line) => `<span>${escapeHtml(line)}</span>`).join("");
+    const hallRows = (state.memory.hall || []).slice(0, 6).map((entry) => `<div class="memory-row"><strong>${escapeHtml(entry.title)}</strong><span>${escapeHtml(entry.text)}</span></div>`).join("");
+    const rumorRows = currentRumors().map((line) => `<span class="event-pill event-rumor">${escapeHtml(line)}</span>`).join("");
     const abilityRows = FIELD_ABILITIES.map((ability) => `<span class="${hasFieldAbility(ability.id) ? "is-done" : ""}">${ability.name}: ${ability.reward}</span>`).join("");
     const secretRows = SECRET_SITES.map((site) => `<span class="${state.flags.secrets[site.id] ? "is-done" : hasFieldAbility(site.ability) ? "is-active" : ""}">${site.title}</span>`).join("");
     const assetRows = Object.values(ASSET_PACKS).map((pack) => `
@@ -1965,7 +1989,21 @@
           <span>${state.dexCaught.length} caught</span>
           <span>${foundSecrets}/${SECRET_SITES.length} secrets</span>
           <span>${state.stats.trainerWins || 0} trainer wins</span>
+          <span>${style.label}</span>
+          <span>${ecosystem.label}</span>
         </div>
+      </div>
+      <div class="memory-board">
+        <strong>Region Memory</strong>
+        <div>${memoryRows || `<span>The region is still learning your story.</span>`}</div>
+      </div>
+      <div class="dynamic-events">
+        <strong>Rumor Network</strong>
+        <div>${rumorRows || `<span class="event-pill event-rumor">Talk to townsfolk after badges, catches, and secrets.</span>`}</div>
+      </div>
+      <div class="memory-book">
+        <strong>Memory Book</strong>
+        ${hallRows || `<div class="empty-state">Big moments will be written here.</div>`}
       </div>
       <div class="relation-board">
         <strong>Relationships</strong>
@@ -2024,6 +2062,10 @@
     if (state.flags.trainers["umbra-boss"]) events.push({ type: "signal", label: "Crown signal restored" });
     const city = cityAt(state.player.x, state.player.y);
     if (city) events.push({ type: "town", label: `${city.name} reacts to ${state.badges.length} badge${state.badges.length === 1 ? "" : "s"}` });
+    const style = trainerStyleProfile();
+    if (style.key !== "balanced") events.push({ type: "reputation", label: `${style.label} reputation spreading` });
+    const ecosystem = ecosystemProfile();
+    if (ecosystem.key !== "stable") events.push({ type: "eco", label: ecosystem.event });
     const outbreak = outbreakSpecies();
     if (outbreak) events.push({ type: "spawn", label: `${outbreak.name} outbreak near ${outbreak.route}` });
     if (state.world.postgame && !state.world.legendarySeen) events.push({ type: "legend", label: LEGENDARY_SIGNAL.title });
@@ -2596,10 +2638,19 @@
       ctx.fillStyle = "rgba(23,33,29,0.45)";
       ctx.fillRect(x + 6, y + 6, 4, 22);
       ctx.fillRect(x + 14, y + 10, 70, 16);
+      const transform = routeTransformFor(zone);
+      if (transform) {
+        ctx.fillStyle = transform.color;
+        ctx.fillRect(x + 8, y + h - 18, Math.min(w - 16, 96), 8);
+      }
       ctx.fillStyle = "#fffdf6";
       ctx.font = "800 9px system-ui";
       ctx.textAlign = "left";
       ctx.fillText(zone.name.toUpperCase(), x + 18, y + 22);
+      if (transform) {
+        ctx.font = "800 8px system-ui";
+        ctx.fillText(transform.label.toUpperCase(), x + 18, y + h - 20);
+      }
     });
   }
 
@@ -2681,6 +2732,22 @@
   }
 
   function drawRouteFeatures(time) {
+    SECRET_SITES.forEach((site) => {
+      if (!state.flags.secrets[site.id] && !hasFieldAbility(site.ability)) return;
+      const px = site.x * WORLD.tile - camera.x;
+      const py = site.y * WORLD.tile - camera.y;
+      if (px < -40 || py < -40 || px > els.canvas.width + 40 || py > els.canvas.height + 40) return;
+      const cx = px + (site.w * WORLD.tile) / 2;
+      const cy = py + (site.h * WORLD.tile) / 2;
+      ctx.fillStyle = state.flags.secrets[site.id] ? "rgba(63,141,83,0.56)" : `rgba(220,92,148,${0.42 + Math.sin(time / 260 + site.x) * 0.18})`;
+      ctx.beginPath();
+      ctx.rect(cx - 9, cy - 9, 18, 18);
+      ctx.fill();
+      ctx.fillStyle = "#fffdf6";
+      ctx.font = "900 10px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(state.flags.secrets[site.id] ? "OK" : "?", cx, cy + 4);
+    });
     TILEMAP_LAYERS.events.forEach((event) => {
       if (event.type === "cache" && state.flags.caches[event.id]) return;
       if (event.type === "dungeon" && DUNGEONS[event.dungeonId] && (state.flags.dungeons[event.dungeonId] || 0) >= DUNGEONS[event.dungeonId].rooms.length) return;
@@ -3104,6 +3171,7 @@
     }
     showCutsceneBanner(secret.title, secret.text);
     pushLog(secret.text);
+    addHallMemory("Field Discovery", `${partner ? partner.name : "Your party"} revealed ${secret.title}.`);
     saveGame(false);
     renderAll();
     return "used";
@@ -3503,7 +3571,7 @@
       return;
     }
     if (npc.action === "talk") {
-      showDialog(npc.name, npc.text || "Keep your party healed and your eyes open.");
+      showDialog(npc.name, livingNpcLine(npc));
     }
   }
 
@@ -3517,7 +3585,7 @@
       return true;
     }
     if (step.set) state.flags.story[step.set] = true;
-    showDialog(npc.name, step.text);
+    showDialog(npc.name, `${step.text} ${regionalMemoryLine()}`);
     return true;
   }
 
@@ -3563,6 +3631,8 @@
       pokemon.stages = { attack: 0, defense: 0, speed: 0 };
     });
     state.activeIndex = firstAliveIndex();
+    const city = cityAt(state.player.x, state.player.y);
+    if (city) incrementMemory("healsByCity", city.id, 1);
     pushLog("Your party was healed.");
     if (show) showDialog(nurse, "Your party was healed.");
     saveGame(false);
@@ -4217,6 +4287,7 @@
     const enemyMove = chooseMove(enemy, player);
     const playerMove = MOVES[key];
     const foeMove = MOVES[enemyMove];
+    recordMoveUse(playerMove);
     if (!canActThisTurn(player, battle.log)) {
       battle.locked = true;
       battle.log.push(`${player.name} is slowed by ${player.status}.`);
@@ -4528,6 +4599,7 @@
           battle.log.push(`${battle.badge} earned.`);
           battle.finishTitle = `${battle.badge} earned`;
           battle.finishText = battle.badgeText || getEdition().badgeText;
+          addHallMemory("Badge Moment", `${activePokemon().name} helped win the ${battle.badge}.`);
         }
         pushLog(`Defeated ${battle.trainerName}.`);
         handleStoryAfterBattle(battle);
@@ -4535,6 +4607,7 @@
         state.stats.wildWins = (state.stats.wildWins || 0) + 1;
         pushLog(`Defeated a wild ${battle.enemy.name}.`);
       }
+      recordBattleMemory(battle);
       state.party.filter((pokemon) => pokemon.hp > 0).forEach((pokemon) => addBond(pokemon, battle.kind === "trainer" ? 2 : 1));
       battle.log.push("Battle complete.");
       pulseBattleFx("victory");
@@ -4561,6 +4634,8 @@
     if (battle.trainerId.startsWith("gym-")) {
       changeRelationship("leaders", 4);
       changeRelationship("towns", 2);
+      const gym = GYM_DEFS.find((entry) => entry.trainerId === battle.trainerId);
+      if (gym) state.memory.leaderMentors[gym.cityId] = (state.memory.leaderMentors[gym.cityId] || 0) + 1;
     }
     if (trainer.gymRank && trainer.gymRank === GYM_DEFS.length) {
       battle.finishTitle = "Circuit Complete";
@@ -4629,11 +4704,13 @@
     const chance = clamp(0.08 + hpFactor * (species.catchRate / 255) * 0.92 * badgeBoost, 0.08, 0.92);
     if (Math.random() < chance) {
       markCaught(enemy.speciesId);
+      recordCatchMemory(enemy);
       addPokemon(enemy);
       battle.log.push(`${enemy.name} was caught.`);
       battle.ended = true;
       battle.locked = false;
       pushLog(`Caught ${enemy.name}.`);
+      addHallMemory("New Partner", `${enemy.name} joined you at ${currentRouteName()}.`);
       tone(523, 0.07, "triangle");
       tone(659, 0.07, "triangle", 0.07);
       tone(880, 0.12, "triangle", 0.14);
@@ -4748,6 +4825,7 @@
   function chooseMove(attacker, defender) {
     const options = attacker.moves.length ? attacker.moves : ["tackle"];
     const strategy = state.battle && state.battle.kind === "trainer" && attacker === battleEnemy() ? state.battle.strategy || "balanced" : "wild";
+    const reputation = state.battle && state.battle.kind === "trainer" && attacker === battleEnemy() ? trainerStyleProfile() : null;
     let best = options[0];
     let bestScore = -1;
     options.forEach((key) => {
@@ -4756,7 +4834,8 @@
       const lowHpDrain = move.drain && attacker.hp < attacker.maxHp * 0.45 ? (strategy === "stall" ? 38 : 24) : 0;
       const sweeperBonus = strategy === "sweeper" && move.power ? 16 : 0;
       const adaptiveBonus = strategy === "adaptive" ? typeModifier(move.type, typesOf(defender)) * 12 : 0;
-      const score = (move.power || 16) * typeModifier(move.type, typesOf(defender)) * (typesOf(attacker).includes(move.type) ? 1.2 : 1) + statusBonus + lowHpDrain + sweeperBonus + adaptiveBonus + Math.random() * 16;
+      const reputationBonus = reputation ? reputationCounterBonus(move, reputation, defender) : 0;
+      const score = (move.power || 16) * typeModifier(move.type, typesOf(defender)) * (typesOf(attacker).includes(move.type) ? 1.2 : 1) + statusBonus + lowHpDrain + sweeperBonus + adaptiveBonus + reputationBonus + Math.random() * 16;
       if (score > bestScore) {
         best = key;
         bestScore = score;
@@ -5136,6 +5215,7 @@
   function maybePartnerMoment() {
     const partner = activePokemon();
     if (!partner || state.player.steps - (state.world.lastPartnerMoment || 0) < 40) return;
+    if (partnerAutonomyEvent(partner)) return;
     const secret = SECRET_SITES.find((site) => !state.flags.secrets[site.id] && hasFieldAbility(site.ability) && distanceTo(site.x, site.y) < 8);
     if (secret) {
       state.world.lastPartnerMoment = state.player.steps;
@@ -5164,6 +5244,184 @@
     if (score >= 70) return "Silver";
     if (score >= 35) return "Bronze";
     return "Rookie";
+  }
+
+  function incrementMemory(bucket, key, amount = 1) {
+    if (!state.memory) state.memory = freshState(state.edition).memory;
+    state.memory[bucket] = state.memory[bucket] || {};
+    state.memory[bucket][key] = (state.memory[bucket][key] || 0) + amount;
+  }
+
+  function recordMoveUse(move) {
+    if (!move) return;
+    incrementMemory("movesByType", move.type, 1);
+    if (state.battle && state.battle.trainerId && state.battle.trainerId.startsWith("rival")) {
+      const style = trainerStyleProfile();
+      state.memory.rivalCounters[style.key] = (state.memory.rivalCounters[style.key] || 0) + 1;
+    }
+  }
+
+  function recordCatchMemory(pokemon) {
+    incrementMemory("catchesBySpecies", String(pokemon.speciesId), 1);
+    const route = routeKey();
+    incrementMemory("catchesByRoute", route, 1);
+    if ((state.memory.catchesBySpecies[String(pokemon.speciesId)] || 0) >= 4) {
+      addRumor(`${pokemon.name} are getting wary around ${currentRouteName()}.`);
+    }
+  }
+
+  function recordBattleMemory(battle) {
+    const lead = activePokemon();
+    if (lead) incrementMemory("leadWins", lead.uid, 1);
+    if (lead && lead.hp === 1) addHallMemory("One HP Stand", `${lead.name} survived at 1 HP and finished the fight.`);
+    if (battle.kind === "trainer" && battle.trainerName) addHallMemory("Trainer Battle", `${lead ? lead.name : "Your team"} defeated ${battle.trainerName}.`);
+    updateRouteTransform();
+  }
+
+  function addHallMemory(title, text) {
+    if (!state.memory) state.memory = freshState(state.edition).memory;
+    const key = `${title}:${text}`;
+    if ((state.memory.hall || []).some((entry) => entry.key === key)) return;
+    state.memory.hall = [{ key, title, text, day: state.world.day || 1 }, ...(state.memory.hall || [])].slice(0, 18);
+  }
+
+  function addRumor(text) {
+    if (!state.memory) state.memory = freshState(state.edition).memory;
+    if ((state.memory.rumors || []).includes(text)) return;
+    state.memory.rumors = [text, ...(state.memory.rumors || [])].slice(0, 12);
+  }
+
+  function trainerStyleProfile() {
+    const moves = state.memory && state.memory.movesByType ? state.memory.movesByType : {};
+    const total = Object.values(moves).reduce((sum, value) => sum + value, 0);
+    if (total < 8) return { key: "balanced", label: "Balanced Style" };
+    const top = Object.entries(moves).sort((a, b) => b[1] - a[1])[0];
+    const ratio = top ? top[1] / total : 0;
+    if (ratio >= 0.42) return { key: top[0], label: `${top[0][0].toUpperCase()}${top[0].slice(1)} Specialist` };
+    const attackTypes = ["fire", "electric", "fighting", "dragon", "rock"];
+    const attackScore = attackTypes.reduce((sum, type) => sum + (moves[type] || 0), 0) / total;
+    if (attackScore > 0.58) return { key: "power", label: "Power Battler" };
+    return { key: "balanced", label: "Adaptive Battler" };
+  }
+
+  function reputationCounterBonus(move, reputation, defender) {
+    if (!reputation || reputation.key === "balanced") return 0;
+    if (reputation.key === "power" && move.status && !defender.status) return 22;
+    if (TYPE_CHART[move.type] && reputation.key in TYPE_CHART[move.type] && TYPE_CHART[move.type][reputation.key] > 1) return 20;
+    if (move.effect && reputation.key !== move.type) return 10;
+    return 0;
+  }
+
+  function ecosystemProfile() {
+    const catches = state.memory && state.memory.catchesBySpecies ? state.memory.catchesBySpecies : {};
+    const total = Object.values(catches).reduce((sum, value) => sum + value, 0);
+    if (total < 8) return { key: "stable", label: "Stable Ecosystem", event: "Routes stable" };
+    const top = Object.entries(catches).sort((a, b) => b[1] - a[1])[0];
+    if (top && top[1] >= 5) {
+      const species = speciesOf(Number(top[0]));
+      return { key: "pressure", label: "Ecosystem Pressure", event: `${species.name} migration pressure` };
+    }
+    return { key: "diverse", label: "Healthy Diversity", event: "Diverse catches improving habitats" };
+  }
+
+  function currentRumors() {
+    const rumors = [...((state.memory && state.memory.rumors) || [])];
+    const outbreak = outbreakSpecies();
+    if (outbreak) rumors.unshift(`${outbreak.name} tracks were seen near ${outbreak.route}.`);
+    const style = trainerStyleProfile();
+    if (style.key !== "balanced") rumors.unshift(`Jules is preparing counters for your ${style.label.toLowerCase()}.`);
+    const secret = SECRET_SITES.find((site) => !state.flags.secrets[site.id] && hasFieldAbility(site.ability));
+    if (secret) rumors.unshift(`Someone saw a shimmer near ${secret.title}.`);
+    return rumors.slice(0, 5);
+  }
+
+  function memoryHighlights() {
+    const city = Object.entries((state.memory && state.memory.healsByCity) || {}).sort((a, b) => b[1] - a[1])[0];
+    const lead = Object.entries((state.memory && state.memory.leadWins) || {}).sort((a, b) => b[1] - a[1])[0];
+    const route = Object.entries((state.memory && state.memory.catchesByRoute) || {}).sort((a, b) => b[1] - a[1])[0];
+    const lines = [];
+    if (city) lines.push(`${cityName(city[0])} knows your team from ${city[1]} clinic visit${city[1] === 1 ? "" : "s"}.`);
+    if (lead) {
+      const pokemon = state.party.concat(state.pc).find((entry) => entry.uid === lead[0]);
+      if (pokemon) lines.push(`${pokemon.name} is becoming famous after ${lead[1]} lead win${lead[1] === 1 ? "" : "s"}.`);
+    }
+    const leaderLine = leaderRelationshipLine();
+    if (leaderLine) lines.push(leaderLine);
+    if (route) lines.push(`${ROUTE_NAMES[route[0]] || route[0]} is reacting to your catch pattern.`);
+    lines.push(regionalMemoryLine());
+    return lines.filter(Boolean).slice(0, 4);
+  }
+
+  function regionalMemoryLine() {
+    const ecosystem = ecosystemProfile();
+    if (ecosystem.key === "pressure") return "Professor Maple is watching the habitat balance closely.";
+    if ((state.world.renown || 0) > 24) return "People are starting to recognize your battle record.";
+    if (Object.keys(state.flags.secrets || {}).length >= 3) return "Explorers are trading notes about your discoveries.";
+    return "The region is paying attention.";
+  }
+
+  function partnerArcLine(pokemon) {
+    if (!pokemon) return "No partner arc has started.";
+    const type = typesOf(pokemon)[0];
+    const wins = state.memory && state.memory.leadWins ? state.memory.leadWins[pokemon.uid] || 0 : 0;
+    if ((pokemon.bond || 0) >= 80 && wins >= 8) return `${pokemon.name}'s signature arc is complete: trusted ace.`;
+    if (["fire", "fighting", "dragon"].includes(type)) return `${pokemon.name}'s arc: seek stronger opponents and prove courage.`;
+    if (["water", "grass", "fairy"].includes(type)) return `${pokemon.name}'s arc: protect habitats and restore routes.`;
+    if (["electric", "psychic", "ghost"].includes(type)) return `${pokemon.name}'s arc: decode signals and reveal hidden places.`;
+    return `${pokemon.name}'s arc: build a reputation through shared wins.`;
+  }
+
+  function leaderRelationshipLine() {
+    const mentors = state.memory && state.memory.leaderMentors ? state.memory.leaderMentors : {};
+    const top = Object.entries(mentors).sort((a, b) => b[1] - a[1])[0];
+    if (!top) return "";
+    const gym = GYM_DEFS.find((entry) => entry.cityId === top[0]);
+    return gym ? `${gym.leader} now treats you like a recurring student, not a one-time challenger.` : "";
+  }
+
+  function livingNpcLine(npc) {
+    const base = npc.text || "Keep your party healed and your eyes open.";
+    const rumors = currentRumors();
+    if (rumors.length && Math.random() < 0.55) return `${base} Rumor says ${rumors[0][0].toLowerCase()}${rumors[0].slice(1)}`;
+    return `${base} ${regionalMemoryLine()}`;
+  }
+
+  function updateRouteTransform() {
+    const zone = zoneAt(state.player.x, state.player.y);
+    if (!zone || !state.memory) return;
+    const count = (state.memory.routeTransforms[zone.id] || 0) + 1;
+    state.memory.routeTransforms[zone.id] = count;
+    if (count === 3) addRumor(`${zone.name} changed after your repeated battles there.`);
+  }
+
+  function routeTransformFor(zone) {
+    const count = state.memory && state.memory.routeTransforms ? state.memory.routeTransforms[zone.id] || 0 : 0;
+    if (state.flags.trainers["umbra-boss"] && zone.id === "crownroad") return { label: "restored signal", color: "rgba(117,103,217,0.42)" };
+    if (count >= 5) return { label: "known route", color: "rgba(241,200,75,0.38)" };
+    if (state.badges.length >= 4 && ["saltwind", "ashrun", "sparkline"].includes(zone.id)) return { label: "rebuilt path", color: "rgba(63,141,83,0.32)" };
+    return null;
+  }
+
+  function partnerAutonomyEvent(partner) {
+    if (Math.random() > 0.16) return false;
+    const type = typesOf(partner)[0];
+    if (state.bag.herbs < 6 && ["grass", "bug", "poison"].includes(type)) {
+      state.bag.herbs += 1;
+      state.world.lastPartnerMoment = state.player.steps;
+      addBond(partner, 2);
+      showToast(`${partner.name} found a useful herb.`);
+      addHallMemory("Partner Instinct", `${partner.name} found supplies without being asked.`);
+      saveGame(false);
+      return true;
+    }
+    if (state.battle || !["psychic", "ghost", "electric"].includes(type)) return false;
+    const rumor = currentRumors()[0];
+    if (rumor) {
+      state.world.lastPartnerMoment = state.player.steps;
+      showToast(`${partner.name} points toward a rumor: ${rumor}`);
+      return true;
+    }
+    return false;
   }
 
   function isLocked() {
@@ -5203,6 +5461,15 @@
 
   function uniqueNumbers(values) {
     return [...new Set(values.map(Number).filter((value) => Number.isFinite(value)))];
+  }
+
+  function formatPlaytime(ms) {
+    const totalSeconds = Math.max(0, Math.floor((ms || 0) / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
   function escapeHtml(value) {

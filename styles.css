@@ -704,6 +704,13 @@ button:disabled {
   line-height: 1.35;
 }
 
+.partner-moment small {
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .field-ability-list,
 .trainer-card div {
   display: flex;
@@ -1766,6 +1773,8 @@ body {
 .dynamic-events,
 .relation-board,
 .trainer-card,
+.memory-board,
+.memory-book,
 .pc-summary {
   display: grid;
   gap: 9px;
@@ -1783,6 +1792,8 @@ body {
 .dynamic-events strong,
 .relation-board strong,
 .trainer-card strong,
+.memory-board strong,
+.memory-book strong,
 .pc-summary strong {
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -1842,6 +1853,43 @@ body {
 .event-elite { background: #17211d; }
 .event-spawn { background: #f1c84b; color: #17211d; }
 .event-town { background: #5f7d4e; }
+.event-rumor { background: #8e55b7; }
+.event-reputation { background: #dc5c94; }
+.event-eco { background: #3f8d53; }
+
+.memory-board div {
+  display: grid;
+  gap: 6px;
+}
+
+.memory-board span {
+  padding: 7px 8px;
+  border-left: 4px solid var(--city-accent, var(--violet));
+  border-radius: var(--radius);
+  color: var(--muted);
+  background: rgba(23, 33, 29, 0.06);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.memory-book {
+  gap: 8px;
+}
+
+.memory-row {
+  display: grid;
+  gap: 3px;
+  padding: 9px;
+  border: 1px solid rgba(23, 33, 29, 0.1);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.memory-row span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
 
 .city-identity-card {
   display: grid;
