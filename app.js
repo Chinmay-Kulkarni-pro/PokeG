@@ -43,6 +43,12 @@
     summaryBody: document.getElementById("summaryBody"),
     summaryNicknameButton: document.getElementById("summaryNicknameButton"),
     summaryCloseButton: document.getElementById("summaryCloseButton"),
+    puzzleModal: document.getElementById("puzzleModal"),
+    puzzleKicker: document.getElementById("puzzleKicker"),
+    puzzleTitle: document.getElementById("puzzleTitle"),
+    puzzleText: document.getElementById("puzzleText"),
+    puzzleGrid: document.getElementById("puzzleGrid"),
+    puzzleCloseButton: document.getElementById("puzzleCloseButton"),
     introModal: document.getElementById("introModal"),
     introKicker: document.getElementById("introKicker"),
     introTitle: document.getElementById("introTitle"),
@@ -81,6 +87,9 @@
     dialogBox: document.getElementById("dialogBox"),
     dialogSpeaker: document.getElementById("dialogSpeaker"),
     dialogText: document.getElementById("dialogText"),
+    cutsceneBanner: document.getElementById("cutsceneBanner"),
+    cutsceneTitle: document.getElementById("cutsceneTitle"),
+    cutsceneText: document.getElementById("cutsceneText"),
     menuButton: document.getElementById("menuButton"),
     menuSaveButton: document.getElementById("menuSaveButton"),
     menuCloseButton: document.getElementById("menuCloseButton"),
@@ -427,7 +436,7 @@
       giver: "Lumen Resident",
       start: "A resident lost a satchel near Sunpetal Route.",
       complete: "Returned the Lumen satchel.",
-      reward: { money: 180, balls: 2 }
+      reward: { money: 180, balls: 2, herbs: 2 }
     },
     {
       id: "harbor-lantern",
@@ -437,7 +446,7 @@
       minBadges: 3,
       start: "The lighthouse needs a charged lantern from Neon Heights.",
       complete: "Harbor's lantern is glowing again.",
-      reward: { money: 360, potions: 2 }
+      reward: { money: 360, potions: 2, shards: 2 }
     },
     {
       id: "frost-medicine",
@@ -447,7 +456,7 @@
       minBadges: 5,
       start: "Frostvale needs berries from Thornmere's mist gardens.",
       complete: "Delivered medicine supplies to Frostvale.",
-      reward: { berries: 4, money: 420 }
+      reward: { berries: 4, money: 420, herbs: 3 }
     },
     {
       id: "astral-pages",
@@ -457,7 +466,7 @@
       minBadges: 7,
       start: "Three observatory pages are scattered across the circuit.",
       complete: "Recovered Astral's missing observatory pages.",
-      reward: { balls: 4, money: 700 }
+      reward: { balls: 4, money: 700, shards: 3, circuit: 1 }
     }
   ];
 
@@ -478,6 +487,42 @@
   };
 
   const WEATHER_TYPES = ["clear", "rain", "wind", "spark", "mist", "snow"];
+
+  const ASSET_PACKS = {
+    premium: {
+      ui: "Circuit Glass",
+      tiles: "Grand Circuit HD",
+      sprites: "Trainer Studio",
+      effects: "Move Burst"
+    },
+    umbra: {
+      ui: "Umbra Broadcast",
+      tiles: "Blackout Base",
+      sprites: "Shadow Patrol",
+      effects: "Signal Static"
+    }
+  };
+
+  const GYM_PUZZLES = {
+    "gym-bracken": { title: "Vine Switches", prompt: "Open the living gate in the correct growth order.", sequence: ["leaf", "root", "sun"], options: ["leaf", "sun", "root"] },
+    "gym-quarry": { title: "Stone Weight", prompt: "Balance the quarry lift from lightest to heaviest.", sequence: ["pebble", "ore", "boulder"], options: ["boulder", "pebble", "ore"] },
+    "gym-harbor": { title: "Tide Valves", prompt: "Route water from shore to beacon.", sequence: ["shore", "current", "beacon"], options: ["current", "beacon", "shore"] },
+    "gym-emberfall": { title: "Furnace Draft", prompt: "Feed the furnace without choking the flame.", sequence: ["spark", "air", "coal"], options: ["coal", "spark", "air"] },
+    "gym-frostvale": { title: "Ice Slide", prompt: "Plot the slide path before the floor freezes again.", sequence: ["north", "east", "center"], options: ["center", "north", "east"] },
+    "gym-neon": { title: "Power Grid", prompt: "Complete the neon circuit from generator to tower.", sequence: ["generator", "relay", "tower"], options: ["relay", "tower", "generator"] },
+    "gym-thornmere": { title: "Mist Bells", prompt: "Ring the bells from quietest to loudest.", sequence: ["hush", "chime", "gong"], options: ["gong", "hush", "chime"] },
+    "gym-astral": { title: "Star Lenses", prompt: "Align the observatory lenses with the morning star.", sequence: ["moon", "comet", "star"], options: ["star", "moon", "comet"] }
+  };
+
+  const ECONOMY_RECIPES = [
+    { id: "craft-ball", name: "Craft 3 Balls", cost: { shards: 2, herbs: 1 }, gain: { balls: 3 } },
+    { id: "craft-potion", name: "Brew 2 Potions", cost: { herbs: 3 }, gain: { potions: 2 } },
+    { id: "craft-berry", name: "Pack 3 Berries", cost: { herbs: 1, circuit: 1 }, gain: { berries: 3 } }
+  ];
+
+  const RELATION_KEYS = ["rival", "professor", "leaders", "umbra", "towns"];
+  const PERSONALITIES = ["Brave", "Calm", "Curious", "Loyal", "Mischievous", "Gentle", "Bold", "Careful"];
+  const LEGENDARY_SIGNAL = { id: 147, name: "Dratini", minBadges: 8, title: "Crown Signal Anomaly" };
 
   const ROUTE_NAMES = Object.fromEntries([
     ...CITY_DEFS.map((city) => [city.id, city.name]),
@@ -1086,9 +1131,11 @@
   let playerMotion = null;
   let trainerApproach = null;
   let currentInterior = null;
+  let currentPuzzle = null;
   let summaryTarget = null;
   let introStep = 0;
   let battleFxTimer = 0;
+  let cutsceneTimer = 0;
   let playStartedAt = Date.now();
   const footstepEffects = [];
   let lastMoveAt = 0;
@@ -1098,7 +1145,7 @@
   function freshState(editionId = null) {
     const selectedEdition = editionId && EDITIONS[editionId] ? editionId : null;
     return {
-      version: 3,
+      version: 4,
       profileId: activeProfileId,
       edition: selectedEdition,
       trainer: { name: "Rookie" },
@@ -1106,13 +1153,14 @@
       party: [],
       pc: [],
       activeIndex: 0,
-      bag: { balls: selectedEdition === "sapphire" ? 10 : 8, potions: 4, berries: selectedEdition === "sapphire" ? 3 : 2 },
+      bag: { balls: selectedEdition === "sapphire" ? 10 : 8, potions: 4, berries: selectedEdition === "sapphire" ? 3 : 2, herbs: 2, shards: 1, circuit: 0 },
       money: selectedEdition === "sapphire" ? 320 : 300,
       badges: [],
       dexSeen: [],
       dexCaught: [],
-      flags: { mapleGift: false, trainers: {}, story: {}, quests: {}, scripts: {}, cutscenes: {} },
-      world: { day: 1, weather: "clear", weatherSeed: randomInt(1, 9999), discovered: ["lumen", "bracken"], postgame: false },
+      flags: { mapleGift: false, trainers: {}, story: {}, quests: {}, scripts: {}, cutscenes: {}, puzzles: {} },
+      relationships: { rival: 0, professor: 0, leaders: 0, umbra: 0, towns: 0 },
+      world: { day: 1, weather: "clear", weatherSeed: randomInt(1, 9999), discovered: ["lumen", "bracken"], postgame: false, dynamicEvents: [], legendarySeen: false },
       playtime: 0,
       log: [],
       battle: null,
@@ -1126,7 +1174,7 @@
     const selectedEdition = save.edition && EDITIONS[save.edition] ? save.edition : "ember";
     const base = freshState(selectedEdition);
     const merged = { ...base, ...save };
-    merged.version = 3;
+    merged.version = 4;
     merged.profileId = save.profileId || activeProfileId;
     merged.edition = selectedEdition;
     merged.trainer = { ...base.trainer, ...(save.trainer || {}) };
@@ -1138,6 +1186,11 @@
     merged.flags.quests = { ...(save.flags && save.flags.quests ? save.flags.quests : {}) };
     merged.flags.scripts = { ...(save.flags && save.flags.scripts ? save.flags.scripts : {}) };
     merged.flags.cutscenes = { ...(save.flags && save.flags.cutscenes ? save.flags.cutscenes : {}) };
+    merged.flags.puzzles = { ...(save.flags && save.flags.puzzles ? save.flags.puzzles : {}) };
+    merged.relationships = { ...base.relationships, ...(save.relationships || {}) };
+    RELATION_KEYS.forEach((key) => {
+      if (!Number.isFinite(merged.relationships[key])) merged.relationships[key] = 0;
+    });
     merged.world = { ...base.world, ...(save.world || {}) };
     merged.playtime = Math.max(0, save.playtime || 0);
     merged.party = Array.isArray(save.party) ? save.party.map(revivePokemon).filter(Boolean) : [];
@@ -1168,6 +1221,8 @@
       status: raw.status || "",
       caughtAt: raw.caughtAt || "Unknown",
       ability: raw.ability || abilityFor(raw.speciesId),
+      personality: raw.personality || personalityFor(raw.speciesId),
+      bond: clamp(raw.bond || 0, 0, 100),
       stages: { attack: 0, defense: 0, speed: 0 }
     };
     if (!pokemon.moves.length) pokemon.moves = movesForLevel(pokemon.speciesId, pokemon.level);
@@ -1345,13 +1400,13 @@
 
   function renderTopline() {
     const edition = getEdition();
-    els.gameTitle.textContent = state.edition ? edition.name : "PokeG v3";
+    els.gameTitle.textContent = state.edition ? edition.name : "PokeG v4";
     els.trainerName.textContent = state.trainer.name;
     els.routeName.textContent = state.edition ? currentRouteName() : "Choose your edition";
     els.badgeCount.textContent = `${state.badges.length}/${GYM_DEFS.length}`;
     els.moneyCount.textContent = `$${state.money}`;
     els.seenCount.textContent = state.dexSeen.length;
-    els.editionName.textContent = state.edition ? edition.shortName : "v3";
+    els.editionName.textContent = state.edition ? edition.shortName : "v4";
   }
 
   function renderQuest() {
@@ -1368,6 +1423,7 @@
     if (state.badges.length >= 8 && !state.flags.trainers["umbra-boss"]) text = "Shut down Team Umbra in Crown City";
     if (state.flags.trainers["umbra-boss"] && !state.flags.trainers["rival-crown"]) text = "Meet Jules at Crown Gate";
     if (state.flags.trainers["rival-crown"]) text = "The Crown League desk is open";
+    if (state.world.postgame && !state.world.legendarySeen) text = "Investigate the Crown signal anomaly";
     els.questText.textContent = text;
   }
 
@@ -1479,6 +1535,8 @@
           <div class="hp-track"><div class="hp-fill ${hp < 34 ? "low" : ""}" style="width:${hp}%"></div></div>
           <div class="stat-line"><span>XP</span><span>${pokemon.xp}/${xpNeeded(pokemon.level)}</span></div>
           <div class="xp-track"><div class="xp-fill" style="width:${xp}%"></div></div>
+          <div class="stat-line"><span>${pokemon.personality || personalityFor(pokemon.speciesId)}</span><span>Bond ${pokemon.bond || 0}</span></div>
+          <div class="bond-track"><div class="bond-fill" style="width:${clamp(pokemon.bond || 0, 0, 100)}%"></div></div>
           <div class="party-actions">
             <button class="party-action" type="button" data-lead="${index}" ${pokemon.hp <= 0 ? "disabled" : ""}>Lead</button>
             <button class="party-action" type="button" data-summary-party="${index}">Summary</button>
@@ -1534,7 +1592,10 @@
     const rows = [
       [edition.ballName, state.bag.balls, "Capture wild partners during encounters."],
       ["Potions", state.bag.potions, "Restore 24 HP to a partner."],
-      ["Berries", state.bag.berries, "A light snack that restores 12 HP outside battle."]
+      ["Berries", state.bag.berries, "A light snack that restores 12 HP outside battle."],
+      ["Herbs", state.bag.herbs || 0, "Crafting material from routes and side quests."],
+      ["Signal Shards", state.bag.shards || 0, "Umbra-tech fragments for better gear."],
+      ["Circuit Parts", state.bag.circuit || 0, "Rare parts used for premium crafting."]
     ];
     els.bagPanel.innerHTML = `
       <div class="bag-list">
@@ -1548,7 +1609,41 @@
           </div>
         `).join("")}
       </div>
+      <div class="craft-board">
+        <strong>Crafting Bench</strong>
+        ${ECONOMY_RECIPES.map((recipe) => `
+          <button type="button" data-craft="${recipe.id}" ${canCraft(recipe) ? "" : "disabled"}>
+            ${recipe.name}
+            <span>${recipeCostText(recipe)}</span>
+          </button>
+        `).join("")}
+      </div>
     `;
+  }
+
+  function canCraft(recipe) {
+    return Object.entries(recipe.cost).every(([key, value]) => (state.bag[key] || 0) >= value);
+  }
+
+  function recipeCostText(recipe) {
+    return Object.entries(recipe.cost).map(([key, value]) => `${value} ${key}`).join(" + ");
+  }
+
+  function craftRecipe(recipeId) {
+    const recipe = ECONOMY_RECIPES.find((entry) => entry.id === recipeId);
+    if (!recipe || !canCraft(recipe)) return;
+    Object.entries(recipe.cost).forEach(([key, value]) => {
+      state.bag[key] = Math.max(0, (state.bag[key] || 0) - value);
+    });
+    Object.entries(recipe.gain).forEach(([key, value]) => {
+      state.bag[key] = (state.bag[key] || 0) + value;
+    });
+    changeRelationship("towns", 1);
+    addBond(activePokemon(), 1);
+    pushLog(`${recipe.name} completed.`);
+    showToast(`${recipe.name} completed.`);
+    saveGame(false);
+    renderAll();
   }
 
   function renderDex() {
@@ -1579,6 +1674,7 @@
   }
 
   function renderEventLog() {
+    refreshDynamicEvents();
     const objectives = activeObjectives().map((entry) => `
       <div class="objective-row ${entry.done ? "is-done" : ""}">
         <strong>${entry.title}</strong>
@@ -1599,9 +1695,35 @@
       ["Astral chart", "umbra-admin"],
       ["Crown antenna", "umbra-boss"]
     ].map(([label, key]) => `<span class="${state.flags.trainers[key] ? "is-done" : ""}">${label}</span>`).join("");
+    const relationLabels = { rival: "Jules", professor: "Professor", leaders: "Gym Leaders", umbra: "Umbra Intel", towns: "Townsfolk" };
+    const relationRows = RELATION_KEYS.map((key) => {
+      const value = clamp(state.relationships[key] || 0, -20, 100);
+      const width = clamp(value, 0, 100);
+      return `
+        <div class="relation-row">
+          <span>${relationLabels[key]}</span>
+          <strong>${value}</strong>
+          <i><b style="width:${width}%"></b></i>
+        </div>
+      `;
+    }).join("");
+    const dynamicRows = (state.world.dynamicEvents || []).map((event) => `
+      <span class="event-pill event-${event.type || "field"}">${event.label}</span>
+    `).join("");
+    const assetRows = Object.values(ASSET_PACKS).map((pack) => `
+      <span>${pack.ui} UI</span><span>${pack.tiles} tiles</span><span>${pack.sprites} sprites</span><span>${pack.effects} FX</span>
+    `).join("");
     els.logPanel.innerHTML = `
       <div class="objective-list">
         ${objectives}
+      </div>
+      <div class="dynamic-events">
+        <strong>Live Region Events</strong>
+        <div>${dynamicRows || `<span class="event-pill">Clear roads</span>`}</div>
+      </div>
+      <div class="relation-board">
+        <strong>Relationships</strong>
+        ${relationRows}
       </div>
       <div class="story-board">
         <strong>Gym Circuit</strong>
@@ -1610,11 +1732,27 @@
         <div>${umbraRows}</div>
         <strong>Side Quests</strong>
         <div>${sideRows}</div>
+        <strong>Asset Packs</strong>
+        <div>${assetRows}</div>
       </div>
       <div class="event-log">
         ${state.log.length ? state.log.slice(0, 24).map((entry) => `<div class="log-row"><span>${escapeHtml(entry)}</span></div>`).join("") : `<div class="empty-state">No field notes yet.</div>`}
       </div>
     `;
+  }
+
+  function refreshDynamicEvents() {
+    if (!state.world) state.world = freshState(state.edition).world;
+    const events = [];
+    const phase = timeOfDay();
+    if (phase === "night") events.push({ type: "night", label: "Night spawns active" });
+    if (state.world.weather === "spark") events.push({ type: "spark", label: "Spark storm boosts electric routes" });
+    if (state.world.weather === "rain") events.push({ type: "rain", label: "Rain pulls rare coast encounters" });
+    if (state.badges.length >= 3 && !state.flags.trainers["umbra-quarry"]) events.push({ type: "umbra", label: "Umbra cable theft in progress" });
+    if (state.relationships.towns >= 8) events.push({ type: "market", label: "Town discount network" });
+    if (state.flags.trainers["umbra-boss"]) events.push({ type: "signal", label: "Crown signal restored" });
+    if (state.world.postgame && !state.world.legendarySeen) events.push({ type: "legend", label: LEGENDARY_SIGNAL.title });
+    state.world.dynamicEvents = events.slice(0, 5);
   }
 
   function activeObjectives() {
@@ -1669,12 +1807,15 @@
     const status = questStatus(quest);
     if (status === "locked") {
       state.flags.quests[quest.id] = "active";
+      changeRelationship("towns", 1);
       pushLog(`${quest.title} started.`);
       saveGame(false);
       return `${quest.giver}: ${quest.start}`;
     }
     state.flags.quests[quest.id] = "complete";
     applyQuestReward(quest.reward || {});
+    changeRelationship("towns", 4);
+    showCutsceneBanner("Side Quest Complete", `${quest.title} raised your reputation across the circuit.`);
     pushLog(`${quest.title} complete.`);
     saveGame(false);
     return `${quest.giver}: ${quest.complete}`;
@@ -1685,6 +1826,9 @@
     state.bag.balls += reward.balls || 0;
     state.bag.potions += reward.potions || 0;
     state.bag.berries += reward.berries || 0;
+    state.bag.herbs += reward.herbs || 0;
+    state.bag.shards += reward.shards || 0;
+    state.bag.circuit += reward.circuit || 0;
   }
 
   function renderDialog() {
@@ -1719,7 +1863,7 @@
   }
 
   function toggleMenu(force = null) {
-    if (!state.party.length || state.battle || !els.editionModal.hidden || !els.introModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || !els.mapModal.hidden || !els.interiorModal.hidden || state.dialog) return;
+    if (!state.party.length || state.battle || !els.editionModal.hidden || !els.introModal.hidden || !els.starterModal.hidden || !els.finishModal.hidden || !els.mapModal.hidden || !els.interiorModal.hidden || !els.profileModal.hidden || !els.summaryModal.hidden || !els.puzzleModal.hidden || state.dialog) return;
     state.menuOpen = force === null ? !state.menuOpen : Boolean(force);
     renderPauseMenu();
     tone(state.menuOpen ? 523 : 392, 0.045, "triangle");
@@ -1767,6 +1911,7 @@
   }
 
   function openProfiles() {
+    if (state.battle || !els.puzzleModal.hidden || !els.summaryModal.hidden) return;
     renderProfiles();
     els.profileModal.hidden = false;
     tone(392, 0.05, "triangle");
@@ -1865,11 +2010,13 @@
     state.activeIndex = 0;
     markSeen(starterId);
     markCaught(starterId);
+    changeRelationship("professor", 2);
     pushLog(`${starter.name} joined your party.`);
     pushLog(`${getEdition().shortName} journey started.`);
     els.editionModal.hidden = true;
     els.introModal.hidden = true;
     els.starterModal.hidden = true;
+    showCutsceneBanner("First Partner", `${starter.name} joined the Grand Circuit.`);
     showToast(`${starter.name} joined your party.`);
     saveGame(false);
     renderAll();
@@ -1927,7 +2074,15 @@
       pushLog(`Day ${day}: ${state.world.weather} weather rolled across the circuit.`);
       saveGame(false);
     }
-    if (state.badges.length >= GYM_DEFS.length && state.flags.trainers["umbra-boss"]) state.world.postgame = true;
+    if (state.badges.length >= GYM_DEFS.length && state.flags.trainers["umbra-boss"]) {
+      if (!state.world.postgame && !state.flags.story.postgameAwake) {
+        state.flags.story.postgameAwake = true;
+        showCutsceneBanner("Postgame Signal", "The restored Crown antenna is tracking a rare dragon frequency.");
+        pushLog("A postgame signal opened near Crown City.");
+      }
+      state.world.postgame = true;
+    }
+    refreshDynamicEvents();
   }
 
   function timeOfDay() {
@@ -2453,6 +2608,48 @@
     return TILEMAP_LAYERS.events.find((rect) => rectContains(rect, x, y));
   }
 
+  function handleAuthoredEvent(event) {
+    if (event.type === "postgame") {
+      if (state.world.postgame && !state.world.legendarySeen) {
+        startLegendarySignal(event);
+        return;
+      }
+      if (!state.flags.scripts[event.id]) {
+        state.flags.scripts[event.id] = true;
+        showToast(state.world.postgame ? event.text : "The antenna is quiet for now.");
+        pushLog(state.world.postgame ? event.text : "The Crown antenna is quiet for now.");
+      }
+      return;
+    }
+    if (event.type === "rare" && !state.flags.scripts[event.id]) {
+      state.flags.scripts[event.id] = true;
+      state.bag.herbs += 2;
+      state.bag.shards += 1;
+      showCutsceneBanner("Hidden Grove", "Rare grass shimmered, leaving herbs and a signal shard behind.");
+      showToast(event.text);
+      pushLog(event.text);
+      saveGame(false);
+    }
+  }
+
+  function startLegendarySignal(event) {
+    state.world.legendarySeen = true;
+    const level = clamp(Math.round(partyAverageLevel() + 6), 42, 56);
+    const legendary = createPokemon(LEGENDARY_SIGNAL.id, level);
+    legendary.name = LEGENDARY_SIGNAL.name;
+    markSeen(legendary.speciesId);
+    pushLog(`${LEGENDARY_SIGNAL.title} awakened at Crown City.`);
+    showCutsceneBanner(LEGENDARY_SIGNAL.title, event.text);
+    startBattle({
+      kind: "wild",
+      enemy: legendary,
+      log: [`${LEGENDARY_SIGNAL.title}: ${legendary.name} descended through the restored signal.`],
+      locked: false,
+      ended: false,
+      forcedSwitch: false
+    });
+  }
+
   function isPath(x, y) {
     if (ROAD_SEGMENTS.some((segment) => roadContains(segment, x, y))) return true;
     const city = cityAt(x, y);
@@ -2662,17 +2859,15 @@
       toX: nextX,
       toY: nextY,
       started: performance.now(),
-      duration: 118
+      duration: 104
     };
     state.player.x = nextX;
     state.player.y = nextY;
     state.player.steps += 1;
     const event = authoredEventAt(nextX, nextY);
-    if (event && !state.flags.scripts[event.id]) {
-      state.flags.scripts[event.id] = true;
-      showToast(event.text);
-      pushLog(event.text);
-    }
+    if (event) handleAuthoredEvent(event);
+    if (state.player.steps % 12 === 0) addBond(activePokemon(), 1);
+    if (state.player.steps % 48 === 0 && activePokemon()) showToast(`${activePokemon().name}'s bond grew.`);
     discoverCurrentCity();
     if (state.player.steps % 8 === 0) saveGame(false);
     renderTopline();
@@ -2847,6 +3042,7 @@
     if (!state.party.length) return;
     const edition = getEdition();
     if (state.flags.mapleGift) {
+      changeRelationship("professor", 1);
       showDialog(edition.professor, edition.giftRepeat);
       pushLog(edition.giftLog);
       renderAll();
@@ -2856,7 +3052,9 @@
     state.bag.balls += edition.id === "sapphire" ? 8 : 6;
     state.bag.potions += 2;
     state.money += edition.id === "sapphire" ? 140 : 120;
+    changeRelationship("professor", 6);
     pushLog(`${edition.professor} stocked your bag for the road.`);
+    showCutsceneBanner("Field Kit Received", `${edition.professor} unlocked the circuit map and stocked your first route supplies.`);
     showDialog(edition.professor, edition.giftReceived);
     saveGame(false);
     renderAll();
@@ -2931,7 +3129,14 @@
     if (building.kind === "clinic") healParty(true);
     else if (building.kind === "market") marketRestock(building);
     else if (building.kind === "lab") professorGift();
-    else if (building.kind === "gym" || building.kind === "umbra") startTrainerBattle(building.trainerId);
+    else if (building.kind === "gym") {
+      if (!state.flags.trainers[building.trainerId] && !state.flags.puzzles[building.trainerId]) {
+        openGymPuzzle(building.trainerId);
+      } else {
+        startTrainerBattle(building.trainerId);
+      }
+    }
+    else if (building.kind === "umbra") startTrainerBattle(building.trainerId);
     else if (building.kind === "league") leagueDesk();
     else {
       const city = cityById(building.cityId);
@@ -2954,6 +3159,77 @@
     else line = localHouseLine(building.cityId);
     els.interiorText.textContent = `${city}: ${line}`;
     tone(523, 0.045, "triangle");
+  }
+
+  function openGymPuzzle(trainerId) {
+    const puzzle = GYM_PUZZLES[trainerId];
+    if (!puzzle) {
+      startTrainerBattle(trainerId);
+      return;
+    }
+    currentPuzzle = { trainerId, choices: [] };
+    renderPuzzle(false);
+    els.puzzleModal.hidden = false;
+    tone(392, 0.06, "triangle");
+  }
+
+  function renderPuzzle(solved) {
+    if (!currentPuzzle) return;
+    const puzzle = GYM_PUZZLES[currentPuzzle.trainerId];
+    const gym = GYM_DEFS.find((entry) => entry.trainerId === currentPuzzle.trainerId);
+    const choices = currentPuzzle.choices || [];
+    els.puzzleKicker.textContent = gym ? `${cityName(gym.cityId)} Gym Puzzle` : "Gym Puzzle";
+    els.puzzleTitle.textContent = solved ? "Gate Open" : puzzle.title;
+    els.puzzleText.textContent = solved ? `${puzzle.title} solved. The leader's arena unlocks.` : puzzle.prompt;
+    const progress = puzzle.sequence.map((step, index) => `
+      <span class="puzzle-step ${choices[index] ? "is-filled" : ""} ${solved ? "is-solved" : ""}">
+        ${choices[index] ? choices[index] : index + 1}
+      </span>
+    `).join("");
+    const buttons = puzzle.options.map((option) => `
+      <button type="button" data-puzzle-choice="${option}" ${solved ? "disabled" : ""}>
+        <strong>${option}</strong>
+        <span>${choices.includes(option) ? "Set" : "Choose"}</span>
+      </button>
+    `).join("");
+    els.puzzleGrid.innerHTML = `
+      <div class="puzzle-progress">${progress}</div>
+      ${buttons}
+    `;
+  }
+
+  function choosePuzzleStep(choice) {
+    if (!currentPuzzle) return;
+    const puzzle = GYM_PUZZLES[currentPuzzle.trainerId];
+    const expected = puzzle.sequence[currentPuzzle.choices.length];
+    currentPuzzle.choices.push(choice);
+    if (choice !== expected) {
+      currentPuzzle.choices = [];
+      renderPuzzle(false);
+      showToast("The puzzle resets.");
+      tone(147, 0.07, "square");
+      return;
+    }
+    if (currentPuzzle.choices.length < puzzle.sequence.length) {
+      renderPuzzle(false);
+      tone(523, 0.045, "triangle");
+      return;
+    }
+    const trainerId = currentPuzzle.trainerId;
+    state.flags.puzzles[trainerId] = true;
+    changeRelationship("leaders", 2);
+    renderPuzzle(true);
+    showCutsceneBanner("Gym Gate Open", `${puzzle.title} solved. The leader is waiting.`);
+    pushLog(`${puzzle.title} solved.`);
+    saveGame(false);
+    tone(659, 0.08, "triangle");
+    tone(880, 0.12, "triangle", 0.08);
+    window.setTimeout(() => {
+      if (!currentPuzzle || currentPuzzle.trainerId !== trainerId) return;
+      els.puzzleModal.hidden = true;
+      currentPuzzle = null;
+      startTrainerBattle(trainerId);
+    }, 820);
   }
 
   function localHouseLine(cityId) {
@@ -2995,15 +3271,21 @@
   function marketRestock(building) {
     if (!state.party.length) return;
     const city = cityName(building.cityId);
-    const cost = Math.min(state.money, 120 + state.badges.length * 35);
+    const baseCost = 120 + state.badges.length * 35;
+    const discount = clamp(Math.floor((state.relationships.towns || 0) / 12) * 8, 0, 32);
+    const cost = Math.min(state.money, Math.max(40, baseCost - discount));
     const balls = 3 + Math.floor(state.badges.length / 2);
     const potions = 1 + (state.badges.length >= 4 ? 1 : 0);
     state.money -= cost;
     state.bag.balls += balls;
     state.bag.potions += potions;
     if (state.badges.length >= 3) state.bag.berries += 1;
+    if (state.badges.length >= 2) state.bag.herbs += 1;
+    if (state.badges.length >= 5) state.bag.shards += 1;
+    if (state.badges.length >= 8) state.bag.circuit += 1;
+    changeRelationship("towns", 1);
     pushLog(`Restocked in ${city}.`);
-    showDialog("Market Clerk", `You spent $${cost} and stocked ${balls} balls, ${potions} potions, and field snacks.`);
+    showDialog("Market Clerk", `You spent $${cost} and stocked ${balls} balls, ${potions} potions, and circuit materials.`);
     saveGame(false);
     renderAll();
     tone(622, 0.07, "triangle");
@@ -3197,6 +3479,19 @@
     }, 520);
   }
 
+  function pulseMoveFx(type) {
+    if (!state.battle || !els.battleStage) return;
+    const moveClasses = Object.keys(TYPE_CHART).map((entry) => `move-${entry}`);
+    els.battleStage.classList.remove(...moveClasses);
+    void els.battleStage.offsetWidth;
+    els.battleStage.classList.add(`move-${type}`);
+    els.battleFlash.textContent = MOVES[Object.keys(MOVES).find((key) => MOVES[key].type === type)] ? type.toUpperCase() : "";
+    window.setTimeout(() => {
+      if (els.battleStage) els.battleStage.classList.remove(`move-${type}`);
+      if (els.battleFlash && els.battleFlash.textContent === type.toUpperCase()) els.battleFlash.textContent = "";
+    }, 360);
+  }
+
   function combatantHtml(pokemon, side) {
     if (!pokemon) return "";
     const hp = percent(pokemon.hp, pokemon.maxHp);
@@ -3210,6 +3505,7 @@
         ${typeStrip(types)}
         <div class="stat-line"><span>HP</span><span>${pokemon.hp}/${pokemon.maxHp}</span></div>
         <div class="hp-track"><div class="hp-fill ${hp < 34 ? "low" : ""}" style="width:${hp}%"></div></div>
+        <div class="stat-line"><span>${pokemon.personality || personalityFor(pokemon.speciesId)}</span><span>Bond ${pokemon.bond || 0}</span></div>
       </div>
       <div class="battle-sprite">
         ${spriteBattle(pokemon, side)}
@@ -3232,6 +3528,7 @@
       battle.log.push(`${enemy.name} used ${foeMove.name}.`);
       battle.log.push(...performAttack(enemy, player, enemyMove));
       battle.log.push(...applyEndTurnEffects());
+      if (resolveEndTurnFaints()) return;
       handlePlayerAfterHit();
       return;
     }
@@ -3248,6 +3545,7 @@
     const enemy = battleEnemy();
     if (battle.kind === "trainer" && maybeTrainerUseItem(enemy, battle.log)) {
       battle.log.push(...applyEndTurnEffects());
+      if (resolveEndTurnFaints()) return;
       battle.locked = false;
       renderAfterBattleAction();
       return;
@@ -3262,12 +3560,14 @@
       if (!canActThisTurn(enemy, battle.log)) {
         battle.log.push(`${enemy.name} is slowed by ${enemy.status}.`);
         battle.log.push(...applyEndTurnEffects());
+        if (resolveEndTurnFaints()) return;
         battle.locked = false;
         renderAfterBattleAction();
         return;
       }
       battle.log.push(...performAttack(enemy, player, enemyMove));
       battle.log.push(...applyEndTurnEffects());
+      if (resolveEndTurnFaints()) return;
       handlePlayerAfterHit();
       return;
     }
@@ -3287,13 +3587,29 @@
       return;
     }
     battle.log.push(...applyEndTurnEffects());
+    if (resolveEndTurnFaints()) return;
     battle.locked = false;
     renderAfterBattleAction();
+  }
+
+  function resolveEndTurnFaints() {
+    const player = activePokemon();
+    const enemy = battleEnemy();
+    if (enemy && enemy.hp <= 0) {
+      handleEnemyFainted();
+      return true;
+    }
+    if (player && player.hp <= 0) {
+      handlePlayerAfterHit();
+      return true;
+    }
+    return false;
   }
 
   function performAttack(attacker, defender, moveKey) {
     const move = MOVES[moveKey] || MOVES.tackle;
     const lines = [];
+    pulseMoveFx(move.type);
     if (Math.random() * 100 > move.accuracy) {
       lines.push("It missed.");
       return lines;
@@ -3307,12 +3623,16 @@
     const stab = typesOf(attacker).includes(move.type) ? 1.5 : 1;
     const typeMod = typeModifier(move.type, typesOf(defender));
     const variance = 0.86 + Math.random() * 0.14;
-    const critical = Math.random() < Math.min(0.22, 0.055 + effectiveStat(attacker, "speed") / 950);
-    const raw = (((2 * attacker.level / 5 + 2) * move.power * attack / defense) / 50 + 2) * stab * typeMod * variance * (critical ? 1.7 : 1);
+    const bondCrit = attacker === activePokemon() && (attacker.bond || 0) >= 72 && Math.random() < 0.025;
+    const critical = bondCrit || Math.random() < Math.min(0.22, 0.055 + effectiveStat(attacker, "speed") / 950);
+    const bondBoost = attacker === activePokemon() ? 1 + Math.min(0.08, (attacker.bond || 0) / 1250) : 1;
+    const raw = (((2 * attacker.level / 5 + 2) * move.power * attack / defense) / 50 + 2) * stab * typeMod * variance * (critical ? 1.7 : 1) * bondBoost;
     const damage = typeMod === 0 ? 0 : Math.max(1, Math.floor(raw));
     defender.hp = clamp(defender.hp - damage, 0, defender.maxHp);
     if (damage === 0) lines.push("It had no effect.");
     else lines.push(`${defender.name} took ${damage} damage.`);
+    if (bondCrit && damage > 0) lines.push(`${attacker.name}'s bond found the opening.`);
+    if (attacker === activePokemon() && damage > 0) addBond(attacker, 1);
     if (damage > 0) pulseBattleFx(attacker === activePokemon() ? "enemy-hit" : "player-hit");
     if (typeMod > 1) lines.push("It was super effective.");
     if (typeMod > 0 && typeMod < 1) lines.push("It was not very effective.");
@@ -3446,6 +3766,7 @@
       } else {
         pushLog(`Defeated a wild ${battle.enemy.name}.`);
       }
+      state.party.filter((pokemon) => pokemon.hp > 0).forEach((pokemon) => addBond(pokemon, battle.kind === "trainer" ? 2 : 1));
       battle.log.push("Battle complete.");
       pulseBattleFx("victory");
       tone(784, 0.08, "triangle");
@@ -3462,7 +3783,14 @@
     if (trainer.story === "umbra") {
       state.flags.story.umbraStage = Math.max(state.flags.story.umbraStage || 0, trainer.minBadges || 1);
       state.bag.balls += 1;
+      state.bag.shards += 1;
+      changeRelationship("umbra", 5);
       battle.log.push("You recovered a supply ball from Team Umbra.");
+    }
+    if (battle.trainerId.startsWith("rival")) changeRelationship("rival", 5);
+    if (battle.trainerId.startsWith("gym-")) {
+      changeRelationship("leaders", 4);
+      changeRelationship("towns", 2);
     }
     if (trainer.gymRank && trainer.gymRank === GYM_DEFS.length) {
       battle.finishTitle = "Circuit Complete";
@@ -3472,6 +3800,8 @@
       battle.finishTitle = "Crown Lights Restored";
       battle.finishText = "Director Vey's blackout protocol failed. The league desk is open, and Jules is waiting for a final gate battle.";
       state.money += 500;
+      state.bag.circuit += 2;
+      changeRelationship("towns", 8);
     }
   }
 
@@ -3481,11 +3811,14 @@
     if (battle.trainerId && battle.trainerId.startsWith("gym-")) {
       battle.log.push("The gym lights sweep across the arena.");
       battle.log.push(`${battle.trainerName} registers your badge in the circuit network.`);
+      showCutsceneBanner("Badge Registered", `${battle.trainerName} synced your badge into the Grand Circuit.`);
     } else if (battle.trainerId && battle.trainerId.startsWith("umbra")) {
       battle.log.push("Team Umbra's device spits static and goes dark.");
       battle.log.push("A new route signal stabilizes on your map.");
+      showCutsceneBanner("Umbra Signal Broken", "A blackout relay collapsed and the regional map stabilized.");
     } else if (battle.trainerId && battle.trainerId.startsWith("rival")) {
       battle.log.push(`${battle.trainerName} points toward the next city before running ahead.`);
+      showCutsceneBanner("Rival Arc", `${battle.trainerName} pushes the journey toward the next city.`);
     }
   }
 
@@ -3662,6 +3995,8 @@
     const gained = Math.max(8, Math.floor((enemy.level * (species.base.hp + species.base.attack + species.base.defense) / 42) + 8));
     const lines = [`${player.name} gained ${gained} XP.`];
     player.xp += gained;
+    addBond(player, 2);
+    if ((player.bond || 0) >= 50) lines.push(`${player.name} trusts you more after the fight.`);
     while (player.level < 100 && player.xp >= xpNeeded(player.level)) {
       player.xp -= xpNeeded(player.level);
       player.level += 1;
@@ -3719,6 +4054,8 @@
       status: "",
       caughtAt: currentRouteName(),
       ability: abilityFor(speciesId),
+      personality: personalityFor(speciesId),
+      bond: 8,
       stages: { attack: 0, defense: 0, speed: 0 }
     };
     recalcPokemon(pokemon, false);
@@ -3851,6 +4188,20 @@
     return abilities[primary] || "Steady";
   }
 
+  function personalityFor(speciesId) {
+    return PERSONALITIES[Math.abs((speciesId * 7) % PERSONALITIES.length)];
+  }
+
+  function changeRelationship(key, amount) {
+    if (!RELATION_KEYS.includes(key)) return;
+    state.relationships[key] = clamp((state.relationships[key] || 0) + amount, -20, 100);
+  }
+
+  function addBond(pokemon, amount) {
+    if (!pokemon) return;
+    pokemon.bond = clamp((pokemon.bond || 0) + amount, 0, 100);
+  }
+
   function typeStrip(types) {
     return `<div class="type-strip">${types.map((type) => `<span class="type-badge type-${type}">${type}</span>`).join("")}</div>`;
   }
@@ -3907,6 +4258,19 @@
     toastTimer = window.setTimeout(() => els.toast.classList.remove("is-visible"), 2400);
   }
 
+  function showCutsceneBanner(title, text) {
+    if (!els.cutsceneBanner) return;
+    els.cutsceneTitle.textContent = title;
+    els.cutsceneText.textContent = text;
+    els.cutsceneBanner.hidden = false;
+    els.cutsceneBanner.classList.add("is-visible");
+    window.clearTimeout(cutsceneTimer);
+    cutsceneTimer = window.setTimeout(() => {
+      els.cutsceneBanner.classList.remove("is-visible");
+      els.cutsceneBanner.hidden = true;
+    }, 3600);
+  }
+
   function isLocked() {
     return !els.editionModal.hidden ||
       !els.introModal.hidden ||
@@ -3914,6 +4278,9 @@
       !els.finishModal.hidden ||
       !els.mapModal.hidden ||
       !els.interiorModal.hidden ||
+      !els.profileModal.hidden ||
+      !els.summaryModal.hidden ||
+      !els.puzzleModal.hidden ||
       !!state.battle ||
       !!state.dialog ||
       state.menuOpen ||
@@ -4018,6 +4385,23 @@
       event.preventDefault();
       els.mapModal.hidden = true;
       renderAll();
+      return;
+    }
+    if (key === "escape" && !els.profileModal.hidden) {
+      event.preventDefault();
+      els.profileModal.hidden = true;
+      return;
+    }
+    if (key === "escape" && !els.summaryModal.hidden) {
+      event.preventDefault();
+      els.summaryModal.hidden = true;
+      summaryTarget = null;
+      return;
+    }
+    if (key === "escape" && !els.puzzleModal.hidden) {
+      event.preventDefault();
+      els.puzzleModal.hidden = true;
+      currentPuzzle = null;
       return;
     }
     if (key === "escape" && !els.interiorModal.hidden) {
@@ -4151,6 +4535,16 @@
       showRegionMap();
       return;
     }
+    const craft = event.target.closest("[data-craft]");
+    if (craft) {
+      craftRecipe(craft.dataset.craft);
+      return;
+    }
+    const puzzleChoice = event.target.closest("[data-puzzle-choice]");
+    if (puzzleChoice) {
+      choosePuzzleStep(puzzleChoice.dataset.puzzleChoice);
+      return;
+    }
     const profileLoad = event.target.closest("[data-profile-load]");
     if (profileLoad) {
       switchProfile(profileLoad.dataset.profileLoad);
@@ -4206,6 +4600,8 @@
           <div><strong>Defense</strong><span>${pokemon.stats.defense}</span></div>
           <div><strong>Speed</strong><span>${pokemon.stats.speed}</span></div>
           <div><strong>Ability</strong><span>${pokemon.ability || abilityFor(pokemon.speciesId)}</span></div>
+          <div><strong>Nature</strong><span>${pokemon.personality || personalityFor(pokemon.speciesId)}</span></div>
+          <div><strong>Bond</strong><span>${pokemon.bond || 0}/100</span></div>
           <div><strong>Status</strong><span>${pokemon.status || "OK"}</span></div>
           <div><strong>Caught</strong><span>${pokemon.caughtAt || "Unknown"}</span></div>
         </div>
@@ -4259,6 +4655,19 @@
     button.addEventListener("click", () => tryMove(move));
   });
 
+  els.profileButton.addEventListener("click", openProfiles);
+  els.profileCloseButton.addEventListener("click", () => {
+    els.profileModal.hidden = true;
+  });
+  els.summaryCloseButton.addEventListener("click", () => {
+    els.summaryModal.hidden = true;
+    summaryTarget = null;
+  });
+  els.summaryNicknameButton.addEventListener("click", nicknameSummaryPokemon);
+  els.puzzleCloseButton.addEventListener("click", () => {
+    els.puzzleModal.hidden = true;
+    currentPuzzle = null;
+  });
   els.menuButton.addEventListener("click", () => toggleMenu());
   els.mapButton.addEventListener("click", showRegionMap);
   els.journalButton.addEventListener("click", () => {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7fbf2">
-  <title>PokeG v3 - Grand Circuit</title>
+  <title>PokeG v4 - Grand Circuit</title>
   <link rel="preconnect" href="https://raw.githubusercontent.com">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,7 +14,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">PG</div>
         <div>
-          <h1 id="gameTitle">PokeG v3</h1>
+          <h1 id="gameTitle">PokeG v4</h1>
           <p id="routeName">Choose your edition</p>
         </div>
       </div>
@@ -22,7 +22,7 @@
         <div><span>Badges</span><strong id="badgeCount">0</strong></div>
         <div><span>Money</span><strong id="moneyCount">$300</strong></div>
         <div><span>Seen</span><strong id="seenCount">0</strong></div>
-        <div><span>Edition</span><strong id="editionName">v3</strong></div>
+        <div><span>Edition</span><strong id="editionName">v4</strong></div>
       </div>
       <div class="top-actions">
         <button class="icon-button" id="profileButton" type="button" title="Profiles" aria-label="Open save profiles">
@@ -77,6 +77,10 @@
             <strong id="dialogSpeaker"></strong>
             <p id="dialogText"></p>
             <span aria-hidden="true"></span>
+          </div>
+          <div class="cutscene-banner" id="cutsceneBanner" hidden>
+            <strong id="cutsceneTitle"></strong>
+            <p id="cutsceneText"></p>
           </div>
           <div class="toast" id="toast" role="status" aria-live="polite"></div>
         </div>
@@ -150,7 +154,7 @@
     <section class="modal-layer" id="editionModal">
       <div class="modal edition-modal">
         <div class="modal-header">
-          <p>PokeG Version 3</p>
+          <p>PokeG Version 4</p>
           <h2>Choose your edition</h2>
         </div>
         <div class="edition-grid" id="editionGrid"></div>
@@ -180,6 +184,20 @@
         <div class="modal-actions">
           <button type="button" id="summaryNicknameButton">Nickname</button>
           <button type="button" id="summaryCloseButton">Close</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="modal-layer" id="puzzleModal" hidden>
+      <div class="modal puzzle-modal">
+        <div class="modal-header">
+          <p id="puzzleKicker">Gym Puzzle</p>
+          <h2 id="puzzleTitle">Challenge Room</h2>
+        </div>
+        <p id="puzzleText"></p>
+        <div class="puzzle-grid" id="puzzleGrid"></div>
+        <div class="modal-actions">
+          <button type="button" id="puzzleCloseButton">Leave</button>
         </div>
       </div>
     </section>
